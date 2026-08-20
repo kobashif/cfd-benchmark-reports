@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>通風ベンチマークの格子収束検証</title>
+<meta name="description" content="壁面格子の細分による通風量の変化、AIJ §7.1 の反復収束判定、室内静圧の実測による流量係数の分離、実験値との乖離の帰属。4 風向。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="通風ベンチマークの格子収束検証">
+<meta property="og:description" content="壁面格子の細分による通風量の変化、AIJ §7.1 の反復収束判定、室内静圧の実測による流量係数の分離、実験値との乖離の帰属。4 風向。">
+<meta name="twitter:card" content="summary">
+<style>
+:root{
+--ground:#F4F7F8;--surface:#FFFFFF;--sunk:#EDF1F3;--ink:#16202A;
+--muted:#5A6B78;--faint:#8496A3;--border:#DBE3E8;--strong:#B9C7D0;
+--accent:#1D5E8C;--signal:#C1440E;--good:#0F6E56;--good-bg:#E2F0EB;
+--warn:#A8620A;--warn-bg:#F8EEDF;--crit:#A32D2D;--crit-bg:#FBEAEA;
+--serif:"Hiragino Mincho ProN","Yu Mincho",YuMincho,"MS PMincho",serif;
+--sans:"Hiragino Sans","Yu Gothic",YuGothic,Meiryo,system-ui,sans-serif;
+--mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+--ground:#10161B;--surface:#171F26;--sunk:#1D262E;--ink:#E3EAEF;
+--muted:#93A3AE;--faint:#71828E;--border:#27333C;--strong:#3B4B57;
+--accent:#77ADD8;--signal:#E48055;--good:#55B896;--good-bg:#142C26;
+--warn:#D69F55;--warn-bg:#2E2418;--crit:#E07A7A;--crit-bg:#2E1A1A;}}
+:root[data-theme="dark"]{
+--ground:#10161B;--surface:#171F26;--sunk:#1D262E;--ink:#E3EAEF;
+--muted:#93A3AE;--faint:#71828E;--border:#27333C;--strong:#3B4B57;
+--accent:#77ADD8;--signal:#E48055;--good:#55B896;--good-bg:#142C26;
+--warn:#D69F55;--warn-bg:#2E2418;--crit:#E07A7A;--crit-bg:#2E1A1A;}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);
+font-size:15px;line-height:1.85;margin:0;padding:0 20px 96px}
+.wrap{max-width:820px;margin:0 auto;display:grid;gap:44px}
+header{padding-top:64px;display:grid;gap:14px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;
+text-transform:uppercase;color:var(--faint)}
+h1{font-family:var(--serif);font-weight:600;font-size:35px;line-height:1.34;
+margin:0;text-wrap:balance;letter-spacing:.01em}
+.standfirst{color:var(--muted);font-size:16px;margin:0;max-width:64ch}
+.meta{display:flex;flex-wrap:wrap;gap:6px 20px;font-family:var(--mono);
+font-size:12.5px;color:var(--faint);border-top:1px solid var(--border);
+padding-top:14px}
+section{display:grid;gap:18px}
+h2{font-family:var(--serif);font-weight:600;font-size:22px;margin:0;
+letter-spacing:.02em;display:flex;align-items:baseline;gap:12px}
+h2::after{content:"";flex:1;height:1px;background:var(--border)}
+h3{font-size:15px;margin:0;font-weight:600;color:var(--muted);letter-spacing:.03em}
+p{margin:0;max-width:68ch}
+.abstract{background:var(--surface);border:1px solid var(--border);
+border-left:3px solid var(--accent);padding:22px 26px;display:grid;gap:12px}
+.finding{background:var(--surface);border:1px solid var(--border);
+border-left:3px solid var(--signal);padding:20px 24px;display:grid;gap:10px}
+.caution{background:var(--crit-bg);border:1px solid var(--border);
+border-left:3px solid var(--crit);padding:20px 24px;display:grid;gap:10px}
+.scroller{overflow-x:auto;border:1px solid var(--border);border-radius:3px;
+background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:520px}
+caption{text-align:left;font-size:13px;color:var(--muted);padding:12px 16px 2px}
+th,td{padding:8px 14px;text-align:right;border-bottom:1px solid var(--border)}
+th:first-child,td:first-child{text-align:left}
+thead th{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.04em;
+border-bottom:1px solid var(--strong);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td.num,th.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+td.hi{color:var(--signal)}
+tr.sub td{background:var(--sunk);font-weight:600}
+ul,ol{margin:0;padding-left:1.2em;display:grid;gap:7px;max-width:68ch}
+li::marker{color:var(--faint)}
+code{font-family:var(--mono);font-size:.92em;background:var(--sunk);
+padding:1px 5px;border-radius:3px}
+.pill{font-family:var(--mono);font-size:11.5px;padding:2px 9px;
+border-radius:999px;letter-spacing:.03em;white-space:nowrap}
+.pill.ok{background:var(--good-bg);color:var(--good)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.wait{background:var(--sunk);color:var(--faint)}
+figcaption{font-size:13px;color:var(--muted);max-width:68ch;line-height:1.7}
+figure.fig{margin:0;display:grid;gap:10px;background:var(--surface);
+border:1px solid var(--border);border-radius:4px;padding:14px}
+figure.fig img{width:100%;display:block;border-radius:2px;background:#fff}
+figure.fig svg{width:100%;height:auto;display:block}
+figcaption strong{color:var(--ink)}
+footer{border-top:1px solid var(--border);padding-top:18px;font-size:12.5px;
+color:var(--faint);display:grid;gap:6px}
+@media(max-width:620px){h1{font-size:27px}}
+
+.sitenav{max-width:920px;margin:0 auto;padding:18px 0 0;display:flex;
+flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
+.sitenav a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent}
+.sitenav a:hover{border-bottom-color:var(--accent)}
+</style>
+</head>
+<body>
+<nav class="sitenav">
+<a href="./">概要</a>
+<a href="grid-convergence.html">格子収束検証</a>
+<a href="numerics.html">数値設定の比較</a>
+<a href="videos.html">流れ場の動画</a>
+</nav>
+
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">verification &amp; validation · 560,500 cells · 4 wind directions</div>
+  <h1>OpenFOAM による通風ベンチマークの検証</h1>
+  <p class="standfirst">
+    書籍 4.5 節の通風ベンチマークを OpenFOAM で解き、
+    <strong>その計算が妥当であることを確認した記録</strong>である。
+    反復収束（AIJ §7.1）、格子収束（GCI）、離散化の影響を順に切り分け、
+    流れ場の構造と開口部の流量係数を既知の値と照合した。
+    通風量の絶対値には実験との乖離が残るが、その原因を数値誤差から切り離して
+    特定できる状態まで整理している。
+  </p>
+  <div class="meta">
+    <span>OpenFOAM v2606 / simpleFoam</span><span>k-ω SST</span>
+    <span>560,500 cells (95×100×59)</span><span>δ<sub>wall</sub> = H/60</span>
+    <span>20,000 iterations</span><span>2026-08-16</span>
+  </div>
+</header>
+
+<section>
+  <h2>要旨</h2>
+  <div class="abstract">
+    <p>
+      <strong>本解析の数値的な妥当性は確認できた。</strong>
+      反復収束は AIJ §7.1 を 4 風向で満たし（0° と 67.5° は全 22 監視量）、
+      格子収束は幾何相似な格子族で見かけの次数 1.607・GCI 1.5 〜 3.7%、
+      離散化スキームの寄与は 0.1 〜 0.4% である。
+      流れ場の構造は 4 風向にわたり単調に変化し、
+      開口部の流量係数は風下側で 4 風向とも 0.65 ± 0.015 と
+      薄板オリフィスの教科書値に一致した。
+      <strong>通風量に残る実験との乖離 −13 〜 −28% は、
+      これら数値誤差のいずれでも説明できない。</strong>
+      書籍自身の CFD（4 モデル）も実験から −5 〜 −30% 外れており、
+      本解析は既往の公表値と同じ精度帯にある。
+    </p>
+    <p>
+      以下、切り分けの過程を順に示す。
+      壁面格子を 2 倍に細分した結果、通風量 Q/(U<sub>H</sub>H²) は 3 風向とも
+      <strong>−1.1 〜 −1.9%</strong> 変化した。既往解で風向によりばらついていた変化幅
+      （+2.2% / −4.4% / +0.03%）が狭い帯に揃った点は収束の傾向として整合的である。
+    </p>
+    <p>
+      一方、この局所細分の格子族では見かけの収束次数が <strong>0.17</strong> にとどまり、
+      解は漸近域に入らなかった。そこで格子生成器の長さスケールをすべて同じ倍率で
+      スケールした<strong>幾何相似な格子族</strong>（560,500 / 174,048 / 66,528 セル、
+      細分比 1.48 / 1.38）を作り直したところ、<strong>見かけの次数は 1.607</strong> となり
+      単調収束が得られた。<strong>残存する格子依存性は GCI で 1.5 〜 3.7%</strong> である。
+      実験との乖離 −13.4% とは明確に桁が異なり、
+      <strong>乖離を格子解像度で説明することはできないと確定した</strong>。
+    </p>
+    <p>
+      45° は既往の細分で +0.03% しか動かず収束したように見えていたが、本解析で −1.68% 動いた。
+      <strong>あの一致は偶然であり、収束の根拠ではなかった</strong>ことが確定した。
+    </p>
+    <p>
+      実験値との乖離は −13 〜 −28% である。室内静圧を CFD から直接測って
+      2 つの開口の流量係数を分離したところ、
+      <strong>風下開口の α は 3 風向とも 0.65 〜 0.68 と薄板オリフィスの教科書値に一致し、
+      風上開口の α は 0.83（0°）から 0.65（45°）へ風向角とともに低下した</strong>。
+      室内 C<sub>p</sub> の標準偏差は 0.011 〜 0.018 にとどまり、
+      オリフィスモデルの前提は満たされている。全圧の分布からは、
+      開口自体の損失は 0.01 〜 0.02 と小さく、損失の大半は開口下流の噴流散逸で
+      生じていることが確認された。
+    </p>
+    <p>
+      したがって <strong>実験との乖離は開口部の流れではなく、建物まわりの圧力場に帰属する</strong>。
+      実測した α のもとで実験値を再現するには開口面の風圧係数差 ΔC<sub>p</sub> が
+      1.06 〜 1.22 必要であり、CFD の値（0.63 〜 0.82）はこれを 25 〜 49% 下回る。
+    </p>
+    <p>
+      この乖離が乱流モデルに起因するかを確かめるため、格子・境界条件を同一に保ったまま
+      標準 k-ε・1 次風上・SIMPLEC（市販ソフト Flow Designer の既定設定に相当）で解き直した。
+      ΔC<sub>p</sub> は予想に反して 6.4% <em>増加</em>した一方、風上開口の α が
+      0.822 から 0.695 へ低下し、正味では通風量が 3.7% 減って実験との差は
+      −13.4% から −16.6% へ広がった。
+      <strong>ΔC<sub>p</sub> と α は独立に調整できず、乱流モデルの変更は両者を逆向きに動かす。</strong>
+      なお比較ケースは 2,771 反復で残差 10⁻⁸ まで収束しており、
+      本解析の設定（20,000 反復で residualControl 未達）より 7 倍速い。
+      収束の速さと精度は別物である。
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>検証の全体像</h2>
+  <p>
+    CFD の妥当性確認は、<strong>方程式を正しく解けているか（verification）</strong>と
+    <strong>現実と合うか（validation）</strong>に分かれる。本報告の到達点は次のとおり。
+  </p>
+  <div class="scroller">
+    <table>
+      <thead><tr><th>区分</th><th>項目</th><th class="num">結果</th>
+      <th class="num">判定</th><th class="num">節</th></tr></thead>
+      <tbody>
+        <tr class="sub"><td colspan="5">Verification — 数値的な正しさ</td></tr>
+        <tr><td>　反復収束</td><td>AIJ §7.1（22 監視量）</td>
+        <td class="num">0°・67.5° は 22/22、22.5°・45° は 21/22</td>
+        <td class="num ok">達成</td><td class="num">3</td></tr>
+        <tr><td>　格子収束</td><td>幾何相似な 3 格子、Celik 手順</td>
+        <td class="num">p = 1.607、GCI 1.5 〜 3.7%</td>
+        <td class="num ok">達成</td><td class="num">4.2</td></tr>
+        <tr><td>　反復誤差と離散化誤差</td><td>分離</td>
+        <td class="num">反復誤差は格子間差の 1/10 以下</td>
+        <td class="num ok">達成</td><td class="num">4.3</td></tr>
+        <tr><td>　離散化スキーム</td><td>QUICK と 1 次風上の 2×2 比較</td>
+        <td class="num">通風量への寄与 0.1 〜 0.4%</td>
+        <td class="num ok">評価済</td><td class="num">6.4</td></tr>
+        <tr><td>　計算領域・閉塞率</td><td>AIJ 推奨を満たす／超える 2 領域</td>
+        <td class="num">拡大しても ΔC<sub>p</sub> は上がらない</td>
+        <td class="num ok">除外</td><td class="num">6.5</td></tr>
+        <tr><td>　開口が風圧場に与える影響</td><td>密閉建物（中実）との比較</td>
+        <td class="num">壁面 C<sub>p</sub> が 0.18 低下</td>
+        <td class="num">定量化</td><td class="num">6.6</td></tr>
+        <tr class="sub"><td colspan="5">Validation — 現実との対応</td></tr>
+        <tr><td>　流れ場の構造</td><td>前面渦・屋根剥離泡・後流</td>
+        <td class="num">立方体の実験値と整合、4 風向で単調</td>
+        <td class="num ok">整合</td><td class="num">5</td></tr>
+        <tr><td>　風下開口の流量係数</td><td>室内静圧の直接測定</td>
+        <td class="num">α = 0.65 ± 0.015（4 風向）</td>
+        <td class="num ok">教科書値と一致</td><td class="num">6.2</td></tr>
+        <tr><td>　風上開口の流量係数</td><td>同上</td>
+        <td class="num">0.83（0°）→ 0.60（67.5°）</td>
+        <td class="num">物理的に妥当</td><td class="num">6.2</td></tr>
+        <tr><td>　通風量の絶対値</td><td>風洞実験との比較</td>
+        <td class="num hi">−13 〜 −28%</td>
+        <td class="num hi">乖離あり</td><td class="num">6</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="finding">
+    <p>
+      <strong>数値誤差はすべて乖離より 1 桁小さい。</strong>
+      反復誤差・格子誤差（1.5 〜 3.7%）・離散化スキーム（0.4% 以下）のいずれも、
+      実験との乖離 13 〜 28% を説明できない。
+      開口部の流れも実測・教科書値と整合している。
+      計算領域を AIJ 推奨を超える大きさへ広げても ΔC<sub>p</sub> は上がらず、
+      むしろ低下した（§6.5）。
+      <strong>消去法により、残る候補は「定常 RANS が後流の非定常性を扱えないこと」
+      のみとなった。</strong>
+      角柱の基底圧は渦放出によって決まるが、定常解析はこれを平均化して消すため、
+      基底負圧を系統的に過小評価することが知られている。
+      書籍自身の CFD 4 モデルも実験から −5 〜 −30% 外れており、
+      定常 RANS でこのベンチマークを解いた場合の一般的な精度帯である。
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>1. 目的</h2>
+  <p>
+    既往解（242,424 セル）は AIJ §7.1 による反復収束を満たす一方、格子収束は未確認であった。
+    とくに 22.5° では粗格子（167,040 セル）からの細分で通風量が −4.4% 動き、
+    これは統計的な 95% 信頼区間の 100 倍以上に相当した。答えが格子幅に依存している状態である。
+  </p>
+  <p>
+    本検証では建物壁面・屋根端・開口縁の目標セル厚さ δ を 0.005 m（H/30）から
+    0.0025 m（H/60）へ半減し、通風量の変化から格子依存性の残存量を定量化する。
+    実験値との −13 〜 −28% の乖離をモデル誤差・境界条件の問題として切り分けられる段階に
+    到達しているかを判断することが目的である。あわせて、実務で用いられる
+    自然換気の通風量式が同じ条件でどの程度の精度を持つかを検証する。
+  </p>
+</section>
+
+<section>
+  <h2>2. 解析条件</h2>
+
+  <h3>2.1 対象と領域</h3>
+  <div class="scroller">
+    <table>
+      <caption>建物寸法は書籍 図 4.5.2 と一致（軒高 H = 0.15 m を 1 とした無次元）。</caption>
+      <thead><tr><th>項目</th><th class="num">無次元</th><th class="num">SI</th></tr></thead>
+      <tbody>
+        <tr><td>建物 幅 × 奥行 × 高さ</td><td class="num">2 × 2 × 1</td><td class="num">0.30 × 0.30 × 0.15 m</td></tr>
+        <tr><td>開口 幅 × 高さ（風上・風下の 2 面）</td><td class="num">0.4 × 0.2</td><td class="num">0.06 × 0.03 m</td></tr>
+        <tr><td>開口の中心高さ</td><td class="num">0.5</td><td class="num">0.075 m</td></tr>
+        <tr><td>領域 x</td><td class="num">−6 〜 10</td><td class="num">−0.9 〜 1.5 m</td></tr>
+        <tr><td>領域 y</td><td class="num">±6</td><td class="num">±0.9 m</td></tr>
+        <tr><td>領域 z</td><td class="num">0 〜 5</td><td class="num">0 〜 0.75 m</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>2.2 無次元化の規約</h3>
+  <p>
+    本報告では <strong>長さを軒高 H、速度を軒高風速 U<sub>H</sub> で無次元化</strong>し、
+    以後 H = 1、U<sub>H</sub> = 1 として記述する。
+    圧力は動圧 ρU<sub>H</sub>²/2 で除して風圧係数 C<sub>p</sub> とし、
+    通風量は U<sub>H</sub>H² で除する。
+    再現性のため SI 値を併記するが、議論はすべて無次元量で行う。
+  </p>
+  <div class="scroller">
+    <table>
+      <thead><tr><th>量</th><th class="num">無次元</th><th class="num">SI</th></tr></thead>
+      <tbody>
+        <tr><td>基準長さ（軒高＝建物高さ）H</td><td class="num">1</td><td class="num">0.15 m</td></tr>
+        <tr><td>基準速度（軒高風速）U<sub>H</sub></td><td class="num">1</td><td class="num">7.0 m/s</td></tr>
+        <tr><td>基準時間 H/U<sub>H</sub></td><td class="num">1</td><td class="num">0.0214 s</td></tr>
+        <tr><td>基準圧力 ρU<sub>H</sub>²/2</td><td class="num">1</td><td class="num">24.5 m²/s²（動粘性圧力）</td></tr>
+        <tr><td>基準流量 U<sub>H</sub>H²</td><td class="num">1</td><td class="num">0.1575 m³/s</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>2.3 流入条件と数値設定</h3>
+  <div class="scroller">
+    <table>
+      <tbody>
+        <tr><td>Reynolds 数</td><td class="num">U<sub>H</sub>H/ν = 70,000</td></tr>
+        <tr><td>流入プロファイル</td><td class="num">鉛直 52 点の <code>fixedProfile</code>（風洞実測に基づく）</td></tr>
+        <tr><td>風向</td><td class="num">0° / 22.5° / 45° / 67.5°（水平風速の大きさは 4 ケースで保存）</td></tr>
+        <tr><td>乱流モデル</td><td class="num">k-ω SST</td></tr>
+        <tr><td>壁面処理</td><td class="num"><code>nutkWallFunction</code> / <code>omegaWallFunction</code></td></tr>
+        <tr><td>対流項</td><td class="num">bounded Gauss QUICK（k・ω は limitedLinear 1）</td></tr>
+        <tr><td>圧力の解法</td><td class="num">PCG + DIC、非直交補正 1 回</td></tr>
+        <tr><td>緩和係数</td><td class="num">p 0.2 / U 0.5 / k 0.4 / ω 0.4</td></tr>
+        <tr><td>建物・開口の実装</td><td class="num"><code>createBaffles</code> による厚さゼロ壁（開口 24 × 12 = 288 面）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    緩和係数は既往解と同一である。標準値（p 0.3 / U 0.7 / k・ω 0.5）に戻せる可能性はあるが、
+    格子収束の比較を目的とするため条件を揃えた。
+  </p>
+
+  <h3>2.4 格子</h3>
+  <div class="scroller">
+    <table>
+      <caption>細分は一様ではなく、建物壁面・屋根端・開口縁の δ のみを細かくしている。</caption>
+      <thead>
+        <tr><th>格子</th><th class="num">セル数</th><th class="num">δ<sub>wall</sub></th>
+        <th class="num">代表長さ比 h ∝ N<sup>−1/3</sup></th><th class="num">δ の比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>A（粗）</td><td class="num">167,040</td><td class="num">H/10</td><td class="num">—</td><td class="num">—</td></tr>
+        <tr><td>B（中）— 既往解</td><td class="num">242,424</td><td class="num">H/30</td><td class="num">1.132</td><td class="num">3.00</td></tr>
+        <tr class="sub"><td>C（細）— 本検証</td><td class="num">560,500</td><td class="num">H/60</td><td class="num">1.322</td><td class="num">2.00</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <figure class="fig">
+    <img src="assets/mesh.png" alt="格子図">
+    <figcaption><strong>図 1</strong>　格子 C（560,500 セル）の建物近傍。
+    上段: yz 断面（開口面 x/H = +1）、中段: xy 断面（開口高さ z/H = 0.5）、
+    下段: xz 断面（開口軸 y/H = 0）。橙が開口部。
+    建物壁面・屋根端・開口縁で δ = H/60 に細分し、遠方へ向けて伸長率 1.25 以内で粗くしている。
+    開口は 24 × 12 = 288 面。</figcaption>
+  </figure>
+  <p>
+    格子 C の品質は、非直交角が最大 0・平均 0、歪みが 7.09×10<sup>−14</sup>、
+    全ブロック境界でセル厚さの段差比 1.000、質量保存の global continuity error 3.7×10<sup>−8</sup> である。
+    アスペクト比は最大 58.7 で、AIJ §7.1 が収束不良の要因として挙げる項目に該当する。
+    4 風向の <code>blockMeshDict</code> は MD5 一致を確認した。
+  </p>
+</section>
+
+<section>
+  <h2>3. 反復収束</h2>
+  <p>
+    AIJ ガイドライン §7.1 に基づき、連続する 2,000 反復窓の代表値の差が 1.0% 以下を
+    「変化なし」と判定した。監視量は通風量および建物内外 7 点の |U|・p・k の計 22 量である。
+    代表値には窓の中央値を用いた。既往解では数千反復に一度、1〜2 サンプルが跳ねる
+    バーストが混入したためである。
+  </p>
+  <div class="scroller">
+    <table>
+      <thead>
+        <tr><th>風向</th><th class="num">収束した監視量</th><th class="num">通風量の窓間変化</th>
+        <th class="num">変動係数</th><th class="num">95% 信頼区間</th><th class="num">バースト</th>
+        <th>未収束項目</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0°</td><td class="num">22 / 22</td><td class="num">0.07%</td><td class="num">0.145%</td>
+        <td class="num">±0.013%</td><td class="num">0</td><td>—</td></tr>
+        <tr><td>22.5°</td><td class="num">21 / 22</td><td class="num">0.10%</td><td class="num">0.188%</td>
+        <td class="num">±0.016%</td><td class="num">0</td><td>P2 |U|（1.02%）</td></tr>
+        <tr><td>45°</td><td class="num">21 / 22</td><td class="num">0.03%</td><td class="num">0.204%</td>
+        <td class="num">±0.018%</td><td class="num">0</td><td>P5 k（1.48%）</td></tr>
+        <tr><td>67.5°</td><td class="num hi">22 / 22</td><td class="num">0.03%</td><td class="num">0.117%</td>
+        <td class="num">±0.010%</td><td class="num">0</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    統計品質は既往解（変動係数 0.4 〜 0.6%、95% 信頼区間 ±0.04 〜 0.08%）に対し
+    <strong>いずれも半分以下</strong>に改善し、警告されていたバーストは 3 風向とも
+    <strong>1 件も発生しなかった</strong>。既往の記録では開口が y 4 × z 6 セルしかなく
+    縁が 1 セルで表現されていたことがバーストの原因とされている。
+    本格子では 24 × 12 = 288 面に細分されており、この解釈と整合する。
+  </p>
+  <p>
+    未収束の 2 量はいずれも窓内変動幅が 9.5%・10.6% と大きく、
+    AIJ §7.1 が挙げる「渦放出のような周期変動」に該当する。
+    定常ソルバでは原理的に収束しない種類の量である。
+  </p>
+  <div class="finding">
+    <p>
+      <strong>反復数を 10,000 から 20,000 へ倍増した影響は通風量に現れなかった。</strong>
+      前半（2,000〜10,000）と後半（10,000〜20,000）の差は 0° 0.03%、22.5° 0.05%、45° 0.01% である。
+      10,000 反復の時点で通風量は既に確定していた。倍増して変わったのは、
+      0° で未収束であった低速域 2 点（P2・P4 の |U|）が収束したことのみである。
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>4. 格子収束</h2>
+  <div class="scroller">
+    <table>
+      <caption>通風量 Q/(U<sub>H</sub>H²)。代表値は反復 15,000〜20,000 の中央値。</caption>
+      <thead>
+        <tr><th>風向</th><th class="num">A 167,040</th><th class="num">B 242,424</th>
+        <th class="num">C 560,500</th><th class="num">A→B</th><th class="num">B→C</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0°</td><td class="num">0.03624</td><td class="num">0.03704</td>
+        <td class="num">0.03665</td><td class="num">+2.20%</td><td class="num hi">−1.05%</td></tr>
+        <tr><td>22.5°</td><td class="num">0.03918</td><td class="num">0.03746</td>
+        <td class="num">0.03674</td><td class="num">−4.40%</td><td class="num hi">−1.92%</td></tr>
+        <tr><td>45°</td><td class="num">0.02971</td><td class="num">0.02972</td>
+        <td class="num">0.02922</td><td class="num">+0.03%</td><td class="num hi">−1.68%</td></tr>
+        <tr><td>67.5°</td><td class="num">—</td><td class="num">—</td>
+        <td class="num">0.02549</td><td class="num">—</td><td class="num">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    A の値は既往記録の変化率から復元したものである。B と C は実測値である。
+  </p>
+
+  <h3>4.1 局所細分の格子族では外挿できない</h3>
+  <p>
+    上表の 3 格子は壁面・屋根端・開口縁の近傍のみを細分したものである。
+    この系列で Richardson 外挿を試みると次のようになる。
+  </p>
+  <div class="scroller">
+    <table>
+      <caption>細分比 r = 1.322（B→C）/ 1.132（A→B）。安全係数 F<sub>s</sub> = 3.0。</caption>
+      <thead>
+        <tr><th>風向</th><th class="num">誤差の符号</th><th class="num">見かけの次数 p</th>
+        <th class="num">GCI（p=1 仮定）</th><th class="num">GCI（p=2 仮定）</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0°</td><td class="num">符号反転</td><td class="num">算出不可</td>
+        <td class="num">9.91%</td><td class="num">4.27%</td></tr>
+        <tr class="sub"><td>22.5°</td><td class="num">同符号</td><td class="num">0.17</td>
+        <td class="num">18.24%</td><td class="num">7.85%</td></tr>
+        <tr><td>45°</td><td class="num">符号反転</td><td class="num">算出不可</td>
+        <td class="num">15.94%</td><td class="num">6.86%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="caution">
+    <p>
+      <strong>この格子族は漸近域に入っていない。</strong>誤差の符号が一貫するのは 22.5° のみで、
+      その見かけの次数は 0.17 と形式次数（対流項 QUICK は 3 次、拡散項は 2 次）を大きく下回る。
+      0° と 45° は符号が反転しており次数を定義できない。
+    </p>
+    <p>
+      原因は格子族の設計にある。(i) 細分が壁面近傍に限定され、代表長さ比（1.322）と
+      壁面セル厚さ比（2.00）が一致しない。(ii) 壁関数を使っているため、
+      壁面第 1 層の厚さを変えるとモデルの適用条件そのものが変わる。
+      (iii) 細分比 1.132 は ASME が求める下限 1.3 を下回る。
+      <strong>局所細分は計算コストには優しいが、格子収束の検証には使えない。</strong>
+    </p>
+  </div>
+
+  <h3>4.2 幾何相似な格子族による再評価</h3>
+  <p>
+    そこで格子生成器の長さスケール（壁面の目標厚さ EDGE、近傍の上限 ROOM、
+    遠方の上限 FAR）を<strong>すべて同じ倍率でスケール</strong>した格子族を作り直した。
+    倍率 2 を選んだのは、開口寸法 0.03 m を割り切る目標厚さが
+    0.0025 / 0.005 / 0.01 ときれいに並ぶ唯一の系列だからである
+    （倍率 1.5 では 3 段目が割り切れず、ブロック境界に段差が残る）。
+  </p>
+  <div class="scroller">
+    <table>
+      <caption>風向 0°。3 格子とも k-ω SST / QUICK / SIMPLE で 20,000 反復。代表値は最終 2,000 反復の中央値。</caption>
+      <thead>
+        <tr><th>格子</th><th class="num">EDGE</th><th class="num">セル数</th>
+        <th class="num">開口面数</th><th class="num">y⁺ の目安</th>
+        <th class="num">Q/(U<sub>H</sub>H²)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>G1（細）</td><td class="num">H/60</td><td class="num">560,500</td>
+        <td class="num">288</td><td class="num">41</td><td class="num">0.03663</td></tr>
+        <tr><td>G2（中）</td><td class="num">H/30</td><td class="num">174,048</td>
+        <td class="num">72</td><td class="num">83</td><td class="num">0.03702</td></tr>
+        <tr><td>G3（粗）</td><td class="num">H/15</td><td class="num">66,528</td>
+        <td class="num">18</td><td class="num">166</td><td class="num">0.03759</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    開口面数が正確に 1/4 ずつになっており、面方向の相似性が保たれている。
+    <strong>y⁺ は 3 段とも対数則層（30 〜 300）に収まる</strong>ので、
+    局所細分の格子族が抱えていた「壁関数の適用条件が変わる」問題も同時に解消している。
+  </p>
+  <div class="scroller">
+    <table>
+      <caption>Celik et al. (2008) / ASME V&amp;V 20 の手順。細分比が一定でない場合の反復解法で次数を求めた。</caption>
+      <thead><tr><th>量</th><th class="num">値</th></tr></thead>
+      <tbody>
+        <tr><td>細分比 r<sub>21</sub> / r<sub>32</sub></td>
+        <td class="num">1.477 / 1.378（いずれも ASME 下限 1.3 以上）</td></tr>
+        <tr><td>誤差の符号</td><td class="num ok">同符号（単調収束）</td></tr>
+        <tr><td>見かけの次数 p</td><td class="num hi">1.607</td></tr>
+        <tr><td>Richardson 外挿値</td><td class="num">0.03618</td></tr>
+        <tr><td>近似相対誤差 e<sub>a</sub></td><td class="num">1.07%</td></tr>
+        <tr><td>外挿相対誤差 e<sub>ext</sub></td><td class="num">1.24%</td></tr>
+        <tr><td>GCI（最細、F<sub>s</sub> = 1.25）</td><td class="num hi">1.53%</td></tr>
+        <tr><td>GCI（最細、F<sub>s</sub> = 3.0）</td><td class="num">3.68%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="finding">
+    <p>
+      <strong>幾何相似な格子族では解が漸近域に入る。</strong>
+      見かけの次数が 0.17 から 1.607 へ改善し、形式次数と同じ桁になった。
+      収束は単調で、Richardson 外挿が成立する。
+    </p>
+    <p>
+      安全係数は Celik の手順に従い、3 格子から次数を求めた場合の標準値
+      F<sub>s</sub> = 1.25 を採る。保守的に F<sub>s</sub> = 3.0 とした場合も併記した。
+      <strong>残存する格子依存性は 1.5 〜 3.7%</strong> である。
+    </p>
+    <p>
+      これは実験との乖離 −13.4%（0°）と<strong>明確に桁が異なる</strong>。
+      局所細分の格子族では GCI の上端 18.2% が乖離の下端に届いてしまい断定できなかったが、
+      本評価により <strong>乖離を格子解像度で説明することはできないと確定した</strong>。
+    </p>
+    <p>
+      外挿値 0.03618 は最細格子の 0.03663 より<em>低い</em>。
+      すなわち格子を細かくするほど実験値（0.0423）から遠ざかる。
+      格子解像度の向上によって一致が改善する見込みはない。
+    </p>
+  </div>
+  <div class="caution">
+    <p>
+      <strong>本評価の限界。</strong>
+      (i) 粗い格子ほど反復変動が大きい（最終 2,000 反復の変動幅は
+      G1 0.73%、G2 3.60%、G3 6.30%）。これは外挿に用いる格子間差 1.07% より大きく、
+      中央値を代表値としてもなお GCI の確度を制約する。
+      (ii) 伸長率の上限 1.25 を 3 格子で固定したため、遠方のセルは相似が要求するほど
+      粗くなっていない（建物壁面の面数比が 4 倍でなく 2.5 倍）。厳密な相似には
+      伸長率も 2 乗する必要があるが、それは伸長そのものによる打ち切り誤差という
+      別の誤差源を持ち込む。ASME / Celik の手順は h をセル数から定義し
+      「同一の生成器で目標寸法をスケール、r ≥ 1.3」を求めるもので、
+      全セルの厳密な相似までは要求していない。本評価はその要件を満たしている。
+      (iii) 評価は風向 0° のみである。
+    </p>
+  </div>
+  <div class="caution">
+    <p>
+      <strong>安全係数について。</strong>Roache / Celik は F<sub>s</sub> = 1.25 を
+      「3 格子以上で観測次数が確立している場合」に限って推奨し、
+      それ以外には F<sub>s</sub> = 3.0 を用いるとしている。
+      §4.1 の局所細分格子族は前者に該当しないため F<sub>s</sub> = 3.0 で示した。
+      本報告の初版では、観測次数が確立していないのに誤って 1.25 を用いていた。
+    </p>
+  </div>
+
+  <h3>4.3 反復誤差と離散化誤差の分離</h3>
+  <p>
+    見かけの収束次数が低い原因として、まず反復収束の不足を疑う必要がある。
+    解が反復的に収束していなければ、格子間の差に反復誤差が混入し、
+    格子収束解析そのものが成立しないからである。
+  </p>
+  <div class="scroller">
+    <table>
+      <caption>反復誤差は前半（反復 2,000〜10,000）と後半（10,000〜20,000）の代表値の差で評価した。</caption>
+      <thead>
+        <tr><th>風向</th><th class="num">反復誤差</th><th class="num">格子誤差 B→C</th>
+        <th class="num">比</th><th class="num">統計的 95% 信頼区間</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0°</td><td class="num">0.03%</td><td class="num">1.05%</td>
+        <td class="num">35 倍</td><td class="num">±0.013%</td></tr>
+        <tr><td>22.5°</td><td class="num">0.05%</td><td class="num">1.92%</td>
+        <td class="num">38 倍</td><td class="num">±0.016%</td></tr>
+        <tr><td>45°</td><td class="num">0.01%</td><td class="num">1.68%</td>
+        <td class="num">168 倍</td><td class="num">±0.018%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    反復誤差は格子誤差の 1/35 〜 1/168 であり、見かけの収束次数の低さを説明できる
+    大きさではない。既往解 B も 20,000 反復で全 22 監視量が収束しているため、
+    <strong>格子間の差は離散化誤差として解釈してよい</strong>。
+  </p>
+  <p>
+    なお反復数を 10,000 から 20,000 へ倍増しても通風量が変わらなかったことは、
+    本ベンチマークにおいて <strong>10,000 反復で通風量の反復収束は達成されている</strong>
+    ことを示す。20,000 反復を要したのは、0° の低速域監視点（P2・P4 の |U|）の
+    統計を安定させるためであった。
+  </p>
+</section>
+
+<section>
+  <h2>5. 流れ場の検証</h2>
+  <p>
+    通風量という積分量だけでなく、流れ場の主要構造が物理的に妥当かを y/H = 0 断面で定量化した。
+    逆流域（U<sub>x</sub> &lt; 0）の広がりと最大逆流速度を指標とする。
+  </p>
+  <div class="scroller">
+    <table>
+      <thead>
+        <tr><th>風向</th><th>構造</th><th class="num">x/H 範囲</th>
+        <th class="num">高さ z/H</th><th class="num">最大逆流速度 |U|<sub>rev</sub></th></tr>
+      </thead>
+      <tbody>
+        <tr><td rowspan="3">0°</td><td>建物前面の渦</td><td class="num">−1.95 〜 −1.02</td>
+        <td class="num">0.233</td><td class="num">0.437</td></tr>
+        <tr><td>屋根の剥離泡</td><td class="num">−0.97 〜 +0.50</td><td class="num">1.133</td><td class="num">0.467</td></tr>
+        <tr><td>後流の再循環</td><td class="num">+1.02 〜 +3.82</td><td class="num">0.950</td><td class="num">0.289</td></tr>
+        <tr><td rowspan="3">22.5°</td><td>建物前面の渦</td><td class="num">−1.87 〜 −1.02</td>
+        <td class="num">0.183</td><td class="num">0.261</td></tr>
+        <tr><td>屋根の剥離泡</td><td class="num">−0.97 〜 −0.47</td><td class="num">1.067</td><td class="num">0.274</td></tr>
+        <tr><td>後流の再循環</td><td class="num">+1.02 〜 +3.35</td><td class="num">0.733</td><td class="num">0.277</td></tr>
+        <tr><td rowspan="3">45°</td><td>建物前面の渦</td><td class="num">−1.80 〜 −1.02</td>
+        <td class="num">0.150</td><td class="num">0.120</td></tr>
+        <tr><td>屋根の剥離泡</td><td class="num">−0.97 〜 −0.72</td><td class="num">1.033</td><td class="num">0.396</td></tr>
+        <tr><td>後流の再循環</td><td class="num">+1.02 〜 +2.23</td><td class="num">0.950</td><td class="num">0.115</td></tr>
+        <tr><td rowspan="3">67.5°</td><td>建物前面の渦</td><td class="num">−1.70 〜 −1.02</td>
+        <td class="num">0.183</td><td class="num">0.084</td></tr>
+        <tr><td>屋根の剥離泡</td><td class="num">−0.93（1 セルのみ）</td><td class="num">1.017</td><td class="num">0.013</td></tr>
+        <tr><td>後流の再循環</td><td class="num">+1.02 〜 +1.65</td><td class="num">0.967</td><td class="num">0.094</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    0° のスタンディング渦は建物前面から 0.95H 上流まで達し、立方体まわりの
+    実験値（0.5 〜 1.0H）と整合する。屋根の剥離泡は x/H = +0.50 で再付着し、
+    屋根長の 3/4 を覆う。後流の再循環は x/H = 3.82 で再付着する。
+    風向角が増すにつれ前面渦と屋根剥離泡はいずれも縮小し、
+    45° では屋根の逆流域が 0.25H 分しか残らない。斜め流入で正面のよどみが弱まる挙動と一致する。
+    <strong>67.5° では屋根の剥離泡が実質的に消滅し（逆流セル 1 個）、
+    後流の再付着点も x/H = 1.65 まで前進する。</strong>
+    前面渦の最大逆流速度は 0.437 → 0.261 → 0.120 → 0.084 U<sub>H</sub>、
+    後流の長さは 3.82H → 3.35H → 2.23H → 1.65H と、
+    <strong>4 風向にわたり単調に変化しており、風向依存性が一貫している</strong>。
+  </p>
+
+  <figure class="fig">
+    <img src="assets/yaw00_xz.png" alt="0度の鉛直断面">
+    <img src="assets/yaw22p5_xz.png" alt="22.5度の鉛直断面">
+    <img src="assets/yaw45_xz.png" alt="45度の鉛直断面">
+    <img src="assets/yaw67p5_xz.png" alt="67.5度の鉛直断面">
+    <figcaption><strong>図 2</strong>　y/H = 0 鉛直断面（開口軸）。上から 0° / 22.5° / 45° / 67.5°。
+    塗り分けは風圧係数 C<sub>p</sub>（4 風向で共通スケール、0 を白）、
+    流線の色は風速 |U|/U<sub>H</sub>。橙の太線が開口部。
+    0° では屋根前縁の剥離泡と後流の再循環が明瞭で、室内には大きな循環渦が形成される。
+    風向角が増すにつれ屋根の剥離泡は縮小し、45° では 0.25H 分しか残らない。
+    室内の圧力は 3 風向とも一様に近く、開口間の圧力差が通風を駆動していることが読み取れる。</figcaption>
+  </figure>
+
+  <figure class="fig">
+    <img src="assets/yaw00_xy.png" alt="0度の水平断面">
+    <img src="assets/yaw22p5_xy.png" alt="22.5度の水平断面">
+    <img src="assets/yaw45_xy.png" alt="45度の水平断面">
+    <img src="assets/yaw67p5_xy.png" alt="67.5度の水平断面">
+    <figcaption><strong>図 3</strong>　z/H = 0.5 水平断面（開口中心高さ）。上から 0° / 22.5° / 45° / 67.5°。
+    0° では後流に左右対称な一対の渦が形成される。
+    風向角が増すと対称性が崩れ、45° では風下側の一方に偏った後流となる。
+    建物側面での加速（|U|/U<sub>H</sub> ≈ 1.2）と、風上面のよどみ（C<sub>p</sub> ≈ 0.6）が
+    いずれの風向でも確認できる。</figcaption>
+  </figure>
+
+  <h3>5.1 流管断面の全圧</h3>
+  <p>
+    風上開口の外周を通る流線 28 本を逆時間積分で追跡し、断面内の全圧
+    C<sub>pt</sub> = (p + |U|²/2)/(U<sub>H</sub>²/2) の一様性を確認した。
+  </p>
+  <div class="scroller">
+    <table>
+      <thead><tr><th>位置</th><th class="num">C<sub>pt</sub> 平均</th>
+      <th class="num">断面内の標準偏差</th><th class="num">C<sub>p</sub> 平均</th>
+      <th class="num">|U|/U<sub>H</sub></th></tr></thead>
+      <tbody>
+        <tr><td>上流端</td><td class="num">0.7110</td><td class="num">0.0259</td><td class="num">0.098</td><td class="num">0.783</td></tr>
+        <tr><td>中間</td><td class="num">0.8244</td><td class="num">0.0197</td><td class="num">0.483</td><td class="num">0.584</td></tr>
+        <tr><td>開口部</td><td class="num">0.7919</td><td class="num">0.0329</td><td class="num">0.537</td><td class="num">0.503</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    断面内のばらつきは標準偏差で平均値の 2.4 〜 4.2% に収まり、
+    28 本の流線がほぼ等しい全圧を保ったまま束をなしている。
+    静圧が 0.098 → 0.537 に上昇し速度が 0.783 → 0.503 に減速する一方、その和がほぼ保たれる
+    という Bernoulli の関係が成立している。
+  </p>
+  <p>
+    ただし流管に沿った方向には上流端から開口部まで +11.4% 増加しており、
+    厳密には保存していない。乱流境界層では平均流線に沿って乱流応力が仕事をするため
+    非粘性の全圧保存は成立しない。加えて流線長を 1.4 m で打ち切っているため
+    「上流端」は一様流ではなく既に建物の影響圏内にある。増加である点については
+    数値的要因も否定できない。
+  </p>
+</section>
+
+<section>
+  <h2>6. 実験および既往計算との比較</h2>
+  <div class="scroller">
+    <table>
+      <caption>風洞実験値は印刷図からの目視読み取りで、通風量 ±0.0015・風向角 ±2° の誤差を含む。</caption>
+      <thead>
+        <tr><th>風向</th><th class="num">本解析 560k</th><th class="num">風洞実験</th>
+        <th class="num">実験比</th><th class="num">書籍 SST k-ω</th><th class="num">書籍比</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0°</td><td class="num">0.03665</td><td class="num">0.0423</td>
+        <td class="num">−13.4%</td><td class="num">0.0400</td><td class="num">−8.4%</td></tr>
+        <tr><td>22.5°</td><td class="num">0.03674</td><td class="num">0.0447</td>
+        <td class="num">−17.8%</td><td class="num">0.0312</td><td class="num">+17.8%</td></tr>
+        <tr><td>45°</td><td class="num">0.02922</td><td class="num">0.0408</td>
+        <td class="num">−28.4%</td><td class="num">0.0288</td><td class="num">+1.5%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <figure class="fig">
+    <svg viewBox="0 0 700 330" role="img" aria-label="風向ごとの通風量を4系列で比較した棒グラフ">
+      <title>通風量の比較</title>
+      <line x1="58" y1="40" x2="688" y2="40" stroke="var(--border)" stroke-width="1"/>
+      <line x1="58" y1="80" x2="688" y2="80" stroke="var(--border)" stroke-width="1"/>
+      <line x1="58" y1="120" x2="688" y2="120" stroke="var(--border)" stroke-width="1"/>
+      <line x1="58" y1="160" x2="688" y2="160" stroke="var(--border)" stroke-width="1"/>
+      <line x1="58" y1="200" x2="688" y2="200" stroke="var(--border)" stroke-width="1"/>
+      <line x1="58" y1="240" x2="688" y2="240" stroke="var(--strong)" stroke-width="1"/>
+      <text x="50" y="44" text-anchor="end" font-size="11" fill="var(--faint)" font-family="var(--mono)">0.05</text>
+      <text x="50" y="84" text-anchor="end" font-size="11" fill="var(--faint)" font-family="var(--mono)">0.04</text>
+      <text x="50" y="124" text-anchor="end" font-size="11" fill="var(--faint)" font-family="var(--mono)">0.03</text>
+      <text x="50" y="164" text-anchor="end" font-size="11" fill="var(--faint)" font-family="var(--mono)">0.02</text>
+      <text x="50" y="204" text-anchor="end" font-size="11" fill="var(--faint)" font-family="var(--mono)">0.01</text>
+      <text x="50" y="244" text-anchor="end" font-size="11" fill="var(--faint)" font-family="var(--mono)">0</text>
+
+      <rect x="78"  y="70.8"  width="36" height="169.2" fill="#93A5B0"/>
+      <rect x="120" y="80.0"  width="36" height="160.0" fill="#B9CBD6"/>
+      <rect x="162" y="91.8"  width="36" height="148.2" fill="var(--accent)"/>
+      <rect x="204" y="93.4"  width="36" height="146.6" fill="var(--signal)"/>
+      <text x="159" y="262" text-anchor="middle" font-size="13" fill="var(--ink)">0°</text>
+
+      <rect x="288" y="61.2"  width="36" height="178.8" fill="#93A5B0"/>
+      <rect x="330" y="115.2" width="36" height="124.8" fill="#B9CBD6"/>
+      <rect x="372" y="90.2"  width="36" height="149.8" fill="var(--accent)"/>
+      <rect x="414" y="93.0"  width="36" height="147.0" fill="var(--signal)"/>
+      <text x="369" y="262" text-anchor="middle" font-size="13" fill="var(--ink)">22.5°</text>
+
+      <rect x="498" y="76.8"  width="36" height="163.2" fill="#93A5B0"/>
+      <rect x="540" y="124.8" width="36" height="115.2" fill="#B9CBD6"/>
+      <rect x="582" y="121.1" width="36" height="118.9" fill="var(--accent)"/>
+      <rect x="624" y="123.1" width="36" height="116.9" fill="var(--signal)"/>
+      <text x="579" y="262" text-anchor="middle" font-size="13" fill="var(--ink)">45°</text>
+
+      <rect x="58"  y="292" width="11" height="11" fill="#93A5B0"/>
+      <text x="75" y="302" font-size="12" fill="var(--muted)">風洞実験</text>
+      <rect x="150" y="292" width="11" height="11" fill="#B9CBD6"/>
+      <text x="167" y="302" font-size="12" fill="var(--muted)">書籍 SST k-ω</text>
+      <rect x="280" y="292" width="11" height="11" fill="var(--accent)"/>
+      <text x="297" y="302" font-size="12" fill="var(--muted)">242,424 セル（既往）</text>
+      <rect x="440" y="292" width="11" height="11" fill="var(--signal)"/>
+      <text x="457" y="302" font-size="12" fill="var(--muted)">560,500 セル（本検証）</text>
+    </svg>
+    <figcaption><strong>図 4</strong>　通風量 Q/(U<sub>H</sub>H²) の比較。
+    本検証（橙）は 3 風向とも既往解（青）をわずかに下回り、風洞実験（灰）との差はむしろ拡大した。
+    書籍の SST k-ω 結果（淡灰）も実験から外れており、その外れ方の向きは風向ごとに異なる。
+    45° がいずれの計算でも一段低い一方、実験では 3 風向がほぼ同水準である点が
+    再現できていない最大の相違である。</figcaption>
+  </figure>
+  <p>
+    実験との乖離は −13 〜 −28% で、格子細分により縮小しなかった。むしろ通風量が
+    低下したため拡大している。§4.2 の幾何相似な格子族による評価では
+    残存する格子依存性は <strong>GCI で 1.5 〜 3.7%</strong>（風向 0°）であり、
+    乖離 13 〜 28% とは<strong>明確に桁が異なる</strong>。
+    さらに Richardson 外挿値 0.03618 は最細格子の 0.03663 より低く、
+    格子を細かくするほど実験値から遠ざかる。
+    <strong>したがってこの乖離は格子解像度では説明できない。</strong>
+    残る候補は開口部の流れか、建物まわりの圧力場である。次節で切り分ける。
+  </p>
+  <h3>6.1 自然換気の通風量式との比較</h3>
+  <p>
+    風上・風下の 2 開口が直列に並ぶ場合、自然換気の通風量は合成実効面積を用いて
+    Q = (αA)<sub>eff</sub> √(2ΔP/ρ)、
+    1/(αA)<sub>eff</sub>² = 1/(α<sub>1</sub>A<sub>1</sub>)² + 1/(α<sub>2</sub>A<sub>2</sub>)²
+    と表される。同面積・同係数なら (αA)<sub>eff</sub> = αA/√2 であり、
+    ΔP = ΔC<sub>p</sub>·(ρ/2)U<sub>H</sub>² を代入して無次元化すると
+  </p>
+  <p style="text-align:center">
+    <strong>Q/(U<sub>H</sub>H²) = (α/√2) (A/H²) √(ΔC<sub>p</sub>)</strong>
+  </p>
+  <p>
+    となる。ここで A/H² = 0.08（開口 1 枚あたり）、ΔC<sub>p</sub> は風上壁と風下壁の
+    開口位置における風圧係数の差、α は開口 1 枚あたりの流量係数である。
+    本節ではまず CFD が与える ΔC<sub>p</sub> を用いてこの式で通風量を算出し、
+    実験値と比較する。
+  </p>
+  <div class="scroller">
+    <table>
+      <caption>ΔC<sub>p</sub> は z/H = 0.5 断面で、開口幅の範囲について壁面外側 2 セル分を平均した値。</caption>
+      <thead>
+        <tr><th>風向</th><th class="num">C<sub>p</sub> 風上</th><th class="num">C<sub>p</sub> 風下</th>
+        <th class="num">ΔC<sub>p</sub></th><th class="num">Q/(U<sub>H</sub>H²)</th>
+        <th class="num">集約 C<sub>d</sub></th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0°</td><td class="num">0.5869</td><td class="num">−0.1427</td>
+        <td class="num">0.7296</td><td class="num">0.03665</td><td class="num hi">0.536</td></tr>
+        <tr><td>22.5°</td><td class="num">0.5509</td><td class="num">−0.2012</td>
+        <td class="num">0.7520</td><td class="num">0.03674</td><td class="num hi">0.530</td></tr>
+        <tr><td>45°</td><td class="num">0.2863</td><td class="num">−0.2854</td>
+        <td class="num">0.5716</td><td class="num">0.02922</td><td class="num hi">0.483</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    「集約 C<sub>d</sub>」は Q/(U<sub>H</sub>H²) = C<sub>d</sub>(A/H²)√(ΔC<sub>p</sub>) と
+    書いたときの係数であり、上式との対応は C<sub>d</sub> = α/√2 である。
+    <strong>1 開口の流量係数 α と直接比較してはならない。</strong>
+  </p>
+
+  <h4>自然換気式による通風量と実験値</h4>
+  <div class="scroller">
+    <table>
+      <caption>自然換気式は CFD が与える ΔC<sub>p</sub> に標準的な α を組み合わせて算出した。</caption>
+      <thead>
+        <tr><th>風向</th><th class="num">風洞実験</th>
+        <th class="num">CFD</th><th class="num">実験比</th>
+        <th class="num">自然換気式 α=0.65</th><th class="num">実験比</th>
+        <th class="num">α=0.60</th><th class="num">α=0.70</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0°</td><td class="num">0.0423</td><td class="num">0.03665</td><td class="num">−13.4%</td>
+        <td class="num hi">0.03141</td><td class="num hi">−25.8%</td>
+        <td class="num">−31.5%</td><td class="num">−20.0%</td></tr>
+        <tr><td>22.5°</td><td class="num">0.0447</td><td class="num">0.03674</td><td class="num">−17.8%</td>
+        <td class="num hi">0.03189</td><td class="num hi">−28.7%</td>
+        <td class="num">−34.2%</td><td class="num">−23.2%</td></tr>
+        <tr><td>45°</td><td class="num">0.0408</td><td class="num">0.02922</td><td class="num">−28.4%</td>
+        <td class="num hi">0.02780</td><td class="num hi">−31.9%</td>
+        <td class="num">−37.1%</td><td class="num">−26.6%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="finding">
+    <p>
+      <strong>自然換気式は実験値を 26 〜 32%（α = 0.65）下回り、CFD よりさらに悪い。</strong>
+      α をどの標準値に取っても、実験との差が CFD より縮まることはない。
+      すなわち本ケースにおいて <strong>CFD は古典的なオリフィスモデルより実験に近い</strong>。
+    </p>
+  </div>
+
+  <h4>逆算した流量係数</h4>
+  <div class="scroller">
+    <table>
+      <thead>
+        <tr><th>風向</th><th class="num">集約 C<sub>d</sub>（CFD）</th>
+        <th class="num">α（CFD）</th><th class="num">α（実験を再現するのに必要）</th>
+        <th class="num">薄板オリフィスの標準値</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0°</td><td class="num">0.536</td><td class="num">0.759</td>
+        <td class="num hi">0.875</td><td class="num">0.60 〜 0.65</td></tr>
+        <tr><td>22.5°</td><td class="num">0.530</td><td class="num">0.749</td>
+        <td class="num hi">0.911</td><td class="num">0.60 〜 0.65</td></tr>
+        <tr><td>45°</td><td class="num">0.483</td><td class="num">0.683</td>
+        <td class="num hi">0.954</td><td class="num">0.60 〜 0.65</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="caution">
+    <p>
+      <strong>本報告の初版はここで基準値を取り違えていた。</strong>
+      初版は集約 C<sub>d</sub> = 0.48 〜 0.54 を 1 開口の標準値 0.6 と比較し、
+      「標準値を下回るので乖離の 6 〜 8 割は流量係数に由来する」と結論していた。
+      しかし α = 0.60 / 0.65 に対応する集約 C<sub>d</sub> は 0.424 / 0.460 であり、
+      CFD の値はこれを<strong>下回るどころか上回っている</strong>。
+      初版の誤差分解は成立しない。当該記述は撤回する。
+      正しい切り分けは、次節で室内静圧を実測して行う。
+    </p>
+  </div>
+
+  <h3>6.2 開口部の圧力損失の直接測定</h3>
+  <p>
+    前節の議論はいずれも「α をいくつと仮定するか」に依存していた。
+    そこで室内静圧 p<sub>room</sub> を CFD から直接測り、2 つの開口の流量係数を
+    分離して求める。
+  </p>
+  <p style="text-align:center">
+    α<sub>風上</sub> = (u<sub>op</sub>/U<sub>H</sub>) / √(C<sub>p,風上</sub> − C<sub>p,room</sub>)
+    α<sub>風下</sub> = (u<sub>op</sub>/U<sub>H</sub>) / √(C<sub>p,room</sub> − C<sub>p,風下</sub>)
+  </p>
+  <p>
+    u<sub>op</sub> = Q/A は開口の平均風速である。室内は壁面から 3 mm 内側の直方体
+    （99 × 99 × 49 点）で体積平均した。基準静圧は建物直上・天井（z/H = 5.0）の下、
+    z/H = 3.0 〜 4.5 の帯に取っている。
+    <strong>C<sub>p</sub> の絶対値は基準域の取り方で 0.10 程度動くが、
+    ΔC<sub>p</sub> と α は圧力差なので基準に依存しない。</strong>
+  </p>
+  <div class="scroller">
+    <table>
+      <thead>
+        <tr><th>風向</th><th class="num">C<sub>p</sub> 風上</th>
+        <th class="num">C<sub>p</sub> 室内</th><th class="num">C<sub>p</sub> 風下</th>
+        <th class="num">ΔC<sub>p</sub> 風上</th><th class="num">ΔC<sub>p</sub> 風下</th>
+        <th class="num">α 風上</th><th class="num">α 風下</th>
+        <th class="num">風上の損失分担</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0°</td><td class="num">0.6816</td><td class="num">0.3740</td>
+        <td class="num">−0.1176</td><td class="num">0.3077</td><td class="num">0.4916</td>
+        <td class="num hi">0.826</td><td class="num hi">0.653</td><td class="num">38.5%</td></tr>
+        <tr><td>22.5°</td><td class="num">0.6265</td><td class="num">0.2638</td>
+        <td class="num">−0.1944</td><td class="num">0.3628</td><td class="num">0.4582</td>
+        <td class="num hi">0.762</td><td class="num hi">0.678</td><td class="num">44.2%</td></tr>
+        <tr><td>45°</td><td class="num">0.3455</td><td class="num">0.0323</td>
+        <td class="num">−0.2820</td><td class="num">0.3132</td><td class="num">0.3143</td>
+        <td class="num hi">0.653</td><td class="num hi">0.651</td><td class="num">49.9%</td></tr>
+        <tr><td>67.5°</td><td class="num">−0.0053</td><td class="num">−0.2855</td>
+        <td class="num">−0.5281</td><td class="num">0.2802</td><td class="num">0.2426</td>
+        <td class="num hi">0.602</td><td class="num hi">0.647</td><td class="num">53.6%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="finding">
+    <p>
+      <strong>(1) 風下開口の α は 4 風向とも 0.647 〜 0.678 で、薄板オリフィスの
+      教科書値に一致する。</strong>
+      風向を 0° から 67.5° まで変えても 0.65 ± 0.015 に収まる。
+      風下開口は常に静穏な室内から後流へ吐き出すため、理想的なオリフィスとして振る舞う。
+    </p>
+    <p>
+      <strong>(2) 風上開口の α は 0.826 → 0.762 → 0.653 → 0.602 と
+      風向角とともに単調に低下する。</strong>
+      0° では接近流が開口に正対するため接近流の動圧が一部回収され、
+      「開口の外側は静止した溜まり」というモデルの前提が風上側でのみ破れる。
+      斜めになるほどこの効果が消え、45° で教科書値に一致し、
+      67.5° ではむしろ下回る（斜め入射に伴う付加的な損失）。
+      損失の分担も 38.5% → 44.2% → 49.9% → 53.6% と単調に移る。
+      <strong>風下開口が定数、風上開口だけが風向に依存するという分離は、
+      4 風向にわたり一貫している。</strong>
+    </p>
+    <p>
+      <strong>(3) 室内静圧は一様である。</strong>
+      室内 C<sub>p</sub> の標準偏差は 0.011 / 0.018 / 0.013 / 0.012 にとどまる。
+      オリフィスモデルが前提とする「室内は一様な静圧の溜まり」は満たされている。
+    </p>
+  </div>
+
+  <h4>損失はどこで発生しているか</h4>
+  <div class="scroller">
+    <table>
+      <caption>0°、中心線 (y = 0, z/H = 0.5) に沿った全圧 C<sub>pt</sub> = (p + |U|²/2)/(U<sub>H</sub>²/2)。基準静圧は未補正（差のみが意味を持つ）。</caption>
+      <thead>
+        <tr><th class="num">x/H</th><th class="num">C<sub>p</sub></th>
+        <th class="num">C<sub>pt</sub></th><th class="num">|U|/U<sub>H</sub></th>
+        <th>位置</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="num">−1.02</td><td class="num">0.5182</td><td class="num">0.7824</td>
+        <td class="num">0.514</td><td>風上開口の直前</td></tr>
+        <tr class="sub"><td class="num">−0.95</td><td class="num">0.3981</td><td class="num">0.7590</td>
+        <td class="num">0.601</td><td>室内 流入直後 — 開口自体の損失は 0.023 のみ</td></tr>
+        <tr><td class="num">−0.50</td><td class="num">0.3158</td><td class="num">0.3191</td>
+        <td class="num">0.057</td><td><strong>噴流が室内で散逸し 0.44 を失う</strong></td></tr>
+        <tr><td class="num">0.00</td><td class="num">0.3121</td><td class="num">0.3192</td>
+        <td class="num">0.084</td><td>室中央</td></tr>
+        <tr><td class="num">0.95</td><td class="num">0.2168</td><td class="num">0.3208</td>
+        <td class="num">0.322</td><td>風下開口の直前</td></tr>
+        <tr class="sub"><td class="num">1.02</td><td class="num">0.0288</td><td class="num">0.3090</td>
+        <td class="num">0.529</td><td>室外 流出直後 — 開口自体の損失は 0.012 のみ</td></tr>
+        <tr><td class="num">1.50</td><td class="num">−0.2090</td><td class="num">−0.0864</td>
+        <td class="num">0.346</td><td>吐出噴流が後流で散逸</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    <strong>開口そのものはほぼ無損失であり（全圧損失 0.01 〜 0.02）、
+    損失は開口下流の噴流散逸で生じている。</strong>
+    これは古典的オリフィスモデルの描像そのものである。
+    流入噴流は x/H = −0.95 から −0.50 の間で完全に散逸し、
+    室内は静圧・全圧ともほぼ一定になる。
+  </p>
+
+  <h3>6.3 乖離の帰属</h3>
+  <p>
+    §6.2 の測定により、CFD が与える流量係数は 0.65 〜 0.83 と物理的に妥当な範囲にあり、
+    <strong>実験との乖離を開口部の損失に帰することはできない</strong>ことが確定した。
+    残る候補は開口面の風圧係数差 ΔC<sub>p</sub> である。
+    実測した α を固定したまま実験値の通風量を再現するのに必要な ΔC<sub>p</sub> は次のとおり。
+  </p>
+  <div class="scroller">
+    <table>
+      <thead>
+        <tr><th>風向</th><th class="num">CFD の ΔC<sub>p</sub></th>
+        <th class="num">実験値の再現に必要な ΔC<sub>p</sub></th>
+        <th class="num">CFD の不足</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0°</td><td class="num">0.799</td><td class="num">1.06</td><td class="num hi">−25%</td></tr>
+        <tr><td>22.5°</td><td class="num">0.821</td><td class="num">1.22</td><td class="num hi">−32%</td></tr>
+        <tr><td>45°</td><td class="num">0.628</td><td class="num">1.22</td><td class="num hi">−49%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="finding">
+    <p>
+      必要な ΔC<sub>p</sub> = 1.06 〜 1.22 は、低層建物の風圧係数として十分に現実的である
+      （風上面 +0.7 前後、風下面 −0.4 前後）。すなわち
+      <strong>実験との乖離は開口部ではなく、建物まわりの圧力場の再現性に帰属する</strong>。
+      とりわけ風上面の圧力回復の不足が疑われる。
+      k-ω SST を含む渦粘性モデルは淀み点で乱流エネルギーを過大評価し、
+      風上面の圧力を下げることが知られており、この方向と整合する。
+    </p>
+  </div>
+  <p>
+    この仮説は乱流モデルを替えれば直接検証できる。標準 k-ε は淀み点での
+    過大評価がさらに強いとされるため、同一格子・同一境界条件で k-ε に替えた場合、
+    ΔC<sub>p</sub> はさらに低下し通風量も減る、と予測した。
+    <strong>次節でこの予測を検証し、棄却する。</strong>
+  </p>
+
+  <h3>6.4 乱流モデルと離散化を替えた検証</h3>
+  <p>
+    仮説を検証するため、格子・境界条件・流入プロファイルを完全に同一にしたまま、
+    数値設定のみ 3 点を替えたケースを追加で解いた。設定は市販ソフト
+    Flow Designer の既定値に合わせている（同ソフトのリファレンスガイドによる）。
+  </p>
+  <div class="scroller">
+    <table>
+      <thead><tr><th>項目</th><th class="num">本解析（書籍準拠）</th>
+      <th class="num">比較ケース（Flow Designer 既定）</th></tr></thead>
+      <tbody>
+        <tr><td>乱流モデル</td><td class="num">k-ω SST</td>
+        <td class="num">標準 k-ε（高 Re 型）</td></tr>
+        <tr><td>対流項</td><td class="num">bounded Gauss QUICK</td>
+        <td class="num">bounded Gauss upwind（1 次）</td></tr>
+        <tr><td>アルゴリズム</td><td class="num">SIMPLE</td>
+        <td class="num">SIMPLEC</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="scroller">
+    <table>
+      <caption>ε は ε = C<sub>μ</sub>kω（C<sub>μ</sub> = 0.09）で k-ω SST 版の流入条件から換算した。風向 0°。</caption>
+      <thead><tr><th>量</th><th class="num">k-ω SST / QUICK</th>
+      <th class="num">k-ε / 1 次風上 / SIMPLEC</th><th class="num">変化</th></tr></thead>
+      <tbody>
+        <tr><td>収束までの反復数</td><td class="num">20,000 で打ち切り（未達）</td>
+        <td class="num hi">2,771 で収束</td><td class="num">—</td></tr>
+        <tr><td>最終残差の水準</td><td class="num">10⁻⁵ 前後で振動</td>
+        <td class="num">10⁻⁸</td><td class="num">—</td></tr>
+        <tr><td>Q/(U<sub>H</sub>H²)</td><td class="num">0.03665</td>
+        <td class="num hi">0.03529</td><td class="num">−3.7%</td></tr>
+        <tr><td>実験比（0.0423）</td><td class="num">−13.4%</td>
+        <td class="num hi">−16.6%</td><td class="num">悪化</td></tr>
+        <tr><td>ΔC<sub>p</sub></td><td class="num">0.7992</td>
+        <td class="num hi">0.8500</td><td class="num">+6.4%</td></tr>
+        <tr><td>C<sub>p</sub> 風上</td><td class="num">0.6816</td>
+        <td class="num">0.6980</td><td class="num">+0.016</td></tr>
+        <tr><td>C<sub>p</sub> 風下</td><td class="num">−0.1176</td>
+        <td class="num">−0.1520</td><td class="num">−0.034</td></tr>
+        <tr><td>α 風上</td><td class="num">0.822</td>
+        <td class="num hi">0.695</td><td class="num">−15%</td></tr>
+        <tr><td>α 風下</td><td class="num">0.651</td>
+        <td class="num">0.659</td><td class="num">+1%</td></tr>
+        <tr><td>室内 C<sub>p</sub> の標準偏差</td><td class="num">0.0113</td>
+        <td class="num">0.0092</td><td class="num">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="caution">
+    <p>
+      <strong>§6.3 の仮説は棄却された。</strong>
+      標準 k-ε に替えても ΔC<sub>p</sub> は低下せず、逆に 6.4% 増加した。
+      増加の向きは実験値の再現に必要な方向（1.06 が必要）と一致しており、
+      淀み点での乱流エネルギー過大評価が風上面圧力を下げるという単純な描像では
+      本ケースを説明できない。
+    </p>
+  </div>
+  <div class="finding">
+    <p>
+      通風量が減ったのは圧力場が弱まったからではなく、
+      <strong>風上開口の流量係数が 0.822 から 0.695 へ 15% 低下したから</strong>である。
+      中心線の全圧を追うと、風上開口の直前（x/H = −1.02）の時点で
+      C<sub>pt</sub> が 0.840 から 0.743 へ落ちており、
+      <strong>接近流の段階ですでに全圧を失っている</strong>。
+      1 次風上差分の数値拡散と標準 k-ε の高い渦粘性が、
+      開口へ向かう流れの運動量を接近段階で削いでいる。
+      風下開口の α が 0.651 → 0.659 とほぼ不変であることは、
+      この効果が「接近流を持つ風上開口」に固有であることを裏づける。
+    </p>
+    <p>
+      すなわち ΔC<sub>p</sub> と α は独立に調整できない。
+      乱流モデルの変更は両者を逆向きに動かし、正味では実験との一致を悪化させた。
+    </p>
+  </div>
+  <div class="finding">
+    <p>
+      <strong>実務上の含意。</strong>Flow Designer 既定に相当する設定は、
+      本解析の設定より <strong>7 倍速く、かつ 3 桁厳しい残差まで</strong>収束した。
+      書籍準拠の設定（QUICK + k-ω SST + SIMPLE）は 20,000 反復でも
+      residualControl を満たさず、監視量の統計処理を要した。
+      堅牢性と計算コストでは既定設定が明確に優れる。
+      一方、通風量の実験一致は −13.4% から −16.6% へ悪化した。
+      <strong>収束の速さと精度は別物である</strong>という、実務で見落とされやすい点が
+      定量的に示された。
+    </p>
+  </div>
+  <p>
+    なお比較ケースを 2,771 反復で確定したのは、residualControl
+    （p 10⁻⁵、U・k・ε 10⁻⁶）を満たして solver が自然終了したためである。
+    末尾 120 反復にわたり通風量は 0.03529 で全桁一定であり、
+    それ以上の反復で結果は変わらない。
+  </p>
+  <p>
+    なお本節の分解は、開口面の風圧係数の実測値がないため
+    「CFD の α が正しい」という前提に立っている。厳密な検証には
+    開口面圧力の実測データを要する。書籍にその記載はない。
+  </p>
+
+  <p>
+    細格子では 0° と 22.5° の通風量がほぼ同値（0.0367）に収束した。
+    既往の粗格子で見えていた風向による差が、格子を細かくすると消えていく。
+    一方、実験では 22.5° が 0° より大きい（0.0447 対 0.0423）。
+    この傾向を再現できていない点はモデル側の課題である。
+  </p>
+
+  <h3>6.5 計算領域の寸法と閉塞率の影響</h3>
+  <p>
+    本解析の計算領域は AIJ ガイドラインの推奨を 3 点とも僅かに下回っている
+    （屋根上 4H &lt; 5H、流出 9H &lt; 10H、閉塞率 3.33% &gt; 3%）。
+    これが ΔC<sub>p</sub> の不足を招いている可能性を検証するため、
+    <strong>建物まわりの解像度を固定したまま領域だけを広げた 2 ケース</strong>を追加した。
+    開口面数はいずれも 72 で、格子の影響は入っていない。
+  </p>
+  <div class="scroller">
+    <table>
+      <caption>風向 0°、EDGE = H/30、k-ω SST / QUICK / SIMPLE、各 20,000 反復。</caption>
+      <thead>
+        <tr><th>量</th><th class="num">G2 基準</th><th class="num">L1 AIJ 最小限</th>
+        <th class="num">L2 AIJ 超過</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>領域 x</td><td class="num">−6 〜 10H</td><td class="num">−6 〜 11H</td>
+        <td class="num">−8 〜 15H</td></tr>
+        <tr><td>領域 y / z</td><td class="num">±6H / 5H</td><td class="num">±6H / 6H</td>
+        <td class="num">±10H / 10H</td></tr>
+        <tr><td>屋根上の余裕</td><td class="num">4H</td><td class="num ok">5H</td>
+        <td class="num ok">9H</td></tr>
+        <tr><td>閉塞率</td><td class="num hi">3.33%</td><td class="num ok">2.78%</td>
+        <td class="num ok">1.00%</td></tr>
+        <tr><td>セル数</td><td class="num">174,048</td><td class="num">181,374</td>
+        <td class="num">231,660</td></tr>
+        <tr class="sub"><td colspan="4">結果</td></tr>
+        <tr><td>Q/(U<sub>H</sub>H²)</td><td class="num">0.03695</td>
+        <td class="num">0.03694</td><td class="num hi">0.03567</td></tr>
+        <tr><td>ΔC<sub>p</sub></td><td class="num">0.7668</td>
+        <td class="num">0.7644</td><td class="num hi">0.7301</td></tr>
+        <tr><td>α 風上</td><td class="num">0.825</td><td class="num">0.822</td>
+        <td class="num">0.822</td></tr>
+        <tr><td>α 風下</td><td class="num">0.686</td><td class="num">0.689</td>
+        <td class="num">0.675</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="finding">
+    <p>
+      <strong>領域を広げても ΔC<sub>p</sub> は上がらない。むしろ下がる。</strong>
+      閉塞率を 3.33% から 1.00% へ、屋根上の余裕を 4H から 9H へ拡大しても、
+      ΔC<sub>p</sub> は 0.7668 → 0.7644 → 0.7301 と単調に低下した。
+      実験値の再現には 1.06 が必要なので、<strong>拡大は乖離を広げる方向に働く</strong>。
+      通風量も 0.03695 → 0.03567 と 3.5% 減った。
+    </p>
+    <p>
+      α は 3 ケースとも 0.822 〜 0.825 で不変であり、
+      領域寸法は開口部の流れに影響していない。
+    </p>
+    <p>
+      解釈としては、閉塞が減って建物上面・側面での流れの加速が弱まり、
+      風下面の負圧が浅くなったためと考えられる。
+      すなわち<strong>狭い領域のほうが、閉塞による見かけの効果でわずかに実験に近かった</strong>。
+      <strong>計算領域の寸法・閉塞率は、実験との乖離の原因ではない。</strong>
+    </p>
+  </div>
+  <div class="caution">
+    <p>
+      L2 は領域高さ 10H が流入プロファイルの実測範囲（z ≤ 0.90 m = 6H）を超えるため、
+      それより上では端の値を保持している。また L2 のみ後流の中心線
+      （x/H = 1.50）で C<sub>pt</sub> = +0.026、|U|/U<sub>H</sub> = 0.42 と
+      他の 2 ケース（−0.15 前後、0.08 〜 0.11）から大きく外れる。
+      再付着位置が変わった可能性と、上記の外挿の影響の両方が疑われる。
+      L2 の絶対値の解釈には注意を要する。
+    </p>
+  </div>
+
+  <h3>6.6 密閉建物との比較 — 開口が風圧場に与える影響</h3>
+  <p>
+    自然換気の計算では、開口部に作用する風圧力として
+    <strong>密閉状態の建物で測った風圧係数</strong>を用いるのが通例である。
+    しかし開口があれば、そこから流入が起こるぶん壁面の圧力回復は不完全になる。
+    その差を定量化するため、<strong>建物内部のセルを計算領域から除去して中実とした
+    密閉ケース</strong>を追加した。
+  </p>
+  <p>
+    開口を塞ぐだけでは室内が外部と切り離された閉領域となり、
+    その領域の圧力が基準を持たない特異系になる。そこで
+    <code>subsetMesh</code> で建物内部のセルを取り除き、露出面を壁パッチとした。
+    格子生成・境界条件・数値設定は開口ありのケースと同一である。
+  </p>
+  <div class="scroller">
+    <table>
+      <caption>風向 0°。風上壁の開口位置における C<sub>p</sub>。基準静圧は建物直上 z/H = 3.0 〜 4.5 で統一。</caption>
+      <thead>
+        <tr><th>格子</th><th class="num">密閉時の C<sub>p</sub></th>
+        <th class="num">開口ありの壁面 C<sub>p</sub></th><th class="num">差</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>EDGE = H/30（153,248 セル）</td><td class="num">0.8555</td>
+        <td class="num">0.6584</td><td class="num hi">0.197</td></tr>
+        <tr><td>EDGE = H/60（yaw00 と同一格子）</td><td class="num">0.8604</td>
+        <td class="num">0.6816</td><td class="num hi">0.179</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="finding">
+    <p>
+      <strong>開口があることで、壁面の風圧係数は 0.18 下がる。</strong>
+      密閉時 0.86 に対し、開口ありでは 0.68 である。
+      2 段階の格子で差が 0.197 / 0.179 とほぼ同じ値になっており、
+      格子誤差（GCI 1.5 〜 3.7%）では説明できない実体のある差である。
+    </p>
+    <p>
+      <strong>実務上の含意。</strong>密閉時の風圧係数をそのまま通風計算に用いると、
+      駆動圧を動圧の 18% ぶん過大評価する。
+      オリフィス則で通風量は駆動圧の平方根に比例するので、
+      通風量の過大評価はおよそ 9% に相当する。
+    </p>
+  </div>
+  <p>
+    開口部の法線方向動圧（P<sub>n</sub> = 0.208）がすべて静圧に転換されると仮定して
+    開口中央の静圧 0.574 に加えても 0.782 にしかならず、
+    密閉時の 0.860 には 0.078（9%）届かない。
+    <strong>壁面近傍の流れが完全には淀まないため、動圧の一部は回収されない。</strong>
+  </p>
+  <p>
+    この密閉時の風圧係数を用いて §6.2 の流量係数を計算し直すと、
+    風上開口の α は <strong>0.654</strong> となる（開口ありの壁面圧力を用いた場合は 0.822）。
+    薄板オリフィスの標準値 0.6 〜 0.65 の範囲に収まる。
+    どちらの定義を採るかで α の値は変わるため、
+    <strong>流量係数を比較する際は、駆動圧をどこで測ったのかを必ず確認する必要がある</strong>。
+  </p>
+  <div class="caution">
+    <p>
+      本節の評価は風向 0° のみである。0° は淀み点が開口を直撃する条件であり、
+      密閉時との差が最大になる可能性がある。斜め入射では差が小さくなることも考えられ、
+      その場合 α の補正量も風向によって変わる。22.5° / 45° / 67.5° の密閉ケースは未実施である。
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>7. 考察</h2>
+
+  <h3>7.1 45° の「見かけの収束」</h3>
+  <p>
+    既往解では A→B の細分で 45° の通風量が +0.03% しか動かず、収束したように見えていた。
+    本解析で B→C により −1.68% 動いたことで、この一致が偶然であったことが確定した。
+    A と C の差は −1.65% であり、B が両者の間ではなくほぼ A と同値であったことになる。
+    <strong>単一の細分ステップで変化が小さいことは格子収束の証拠にならない</strong>という
+    典型例である。
+  </p>
+
+  <h3>7.2 直交格子と斜め流入</h3>
+  <p>
+    格子の幾何学的品質は非直交角 0 で完璧であるが、45° では速度ベクトルが
+    セル面に対して最大に傾斜し、対流項の数値拡散が最大になる。
+    対流スキームに 3 次精度の QUICK を用いても風上系である以上、方向依存性は残る。
+    アスペクト比 58.7 のセルを流れが斜めに横切るため、流れ方向の実効解像度は
+    公称の δ より粗くなる。45° の見かけの収束次数が定義できないことは、
+    この方向依存性と無関係ではないと考えられる。
+  </p>
+  <p>
+    本ベンチマークは建物を格子に整列させ風向を回す構成であり、
+    壁面形状は厳密に表現される代わりに流れが斜めになる。
+    建物を回せば流れは整列するが壁面が階段状になる。
+    直交格子を用いる限りこのトレードオフは避けられない。
+  </p>
+
+  <h3>7.3 壁関数の適用限界</h3>
+  <p>
+    δ = H/60 では壁面 y<sup>+</sup> が概ね 30 前後まで低下し、
+    <code>nutkWallFunction</code> の推奨下限に達する。
+    これ以上の細分は壁関数の前提そのものを崩すため、
+    <strong>本手法で取り得る最後の 1 段</strong>と位置づけられる。
+    さらに解像度を要する場合は低 Re 型の壁面処理、あるいは物体適合格子への移行が必要となる。
+  </p>
+</section>
+
+<section>
+  <h2>8. 限界</h2>
+  <ol>
+    <li>
+      幾何相似な格子族による格子収束の評価は<strong>風向 0° のみ</strong>である。
+      22.5° / 45° / 67.5° については局所細分の格子族しかなく、
+      これらの GCI は漸近域外の参考値にとどまる。
+    </li>
+    <li>
+      粗い格子ほど反復変動が大きい（最終 2,000 反復の変動幅は G1 0.73%、
+      G2 3.60%、G3 6.30%）。これは外挿に用いる格子間差 1.07% より大きく、
+      中央値を代表値としても GCI の確度を制約する。
+    </li>
+    <li>
+      伸長率の上限を 3 格子で固定したため、遠方のセルは厳密な相似が要求するほど
+      粗くなっていない（建物壁面の面数比が 4 倍でなく 2.5 倍）。
+      ASME / Celik の手順の要件は満たすが、全セルの厳密な相似ではない。
+    </li>
+    <li>
+      粗格子 A の通風量は既往記録の変化率から復元した値であり、直接の実測値ではない。
+    </li>
+    <li>
+      風洞実験値は印刷図からの目視読み取りであり、±0.0015 の読み取り誤差を含む。
+      これは通風量の 4% に相当し、実験比の議論における不確かさの下限を与える。
+    </li>
+    <li>
+      定常解析であるため、渦放出に伴う周期変動を含む監視量（22.5° の P2 |U|、
+      45° の P5 k）は原理的に収束しない。
+    </li>
+    <li>
+      開口面の風圧係数の実測値がないため、§6.3 の帰属は
+      「CFD が与える流量係数 α が正しい」という前提に立っている。
+      α が物理的に妥当な範囲にあることは §6.2 で確認したが、
+      実験値との直接照合はできていない。
+    </li>
+    <li>
+      基準静圧の取り方により C<sub>p</sub> の絶対値は 0.10 程度動く。
+      本領域には上流から下流へ C<sub>p</sub> 換算 0.06 程度の圧力勾配があり、
+      境界層の発達と 5H という領域高さに起因すると見られる。
+      ΔC<sub>p</sub> と α はこの影響を受けない。
+    </li>
+    <li>
+      自然換気の通風量式との比較は、両開口の流量係数が等しく風向に依存しないと
+      仮定している。斜め入射（22.5°・45°）では風上開口への入射角が変わるため、
+      この仮定自体が精度を落としている可能性がある。
+    </li>
+  </ol>
+</section>
+
+<section>
+  <h2>9. 結論</h2>
+  <div class="finding">
+    <p>
+      <strong>本解析の数値的な妥当性は確認された。</strong>
+      反復収束・格子収束・離散化スキームの寄与をいずれも定量化し、
+      合計しても実験との乖離の 1 桁下にとどまることを示した。
+      開口部の流量係数は実測に基づいて分離され、教科書値と一致した。
+      計算領域・閉塞率も原因から除外された。
+      <strong>消去法により、残る候補は「定常 RANS が後流の非定常性を扱えないこと」
+      のみとなった。</strong>
+      その水準は書籍自身の CFD 4 モデル（実験比 −5 〜 −30%）と同等であり、
+      定常 RANS でこのベンチマークを解いた場合の一般的な精度である。
+    </p>
+  </div>
+  <ol>
+    <li>
+      壁面格子を H/30 から H/60 へ細分した結果、通風量は 3 風向とも −1.1 〜 −1.9% 変化した。
+      既往解で風向によりばらついていた変化幅が狭い帯に揃った。
+    </li>
+    <li>
+      ただしこの局所細分の格子族では見かけの収束次数が 0.17 にとどまり、
+      漸近域に入らなかった。<strong>局所細分は格子収束の検証には使えない。</strong>
+    </li>
+    <li>
+      長さスケールを一律にスケールした<strong>幾何相似な格子族</strong>
+      （560,500 / 174,048 / 66,528 セル、細分比 1.48 / 1.38）で評価し直すと、
+      見かけの次数は <strong>1.607</strong>、収束は単調となり漸近域に入った。
+      <strong>残存する格子依存性は GCI で 1.5 〜 3.7%</strong>（風向 0°）。
+      実験との乖離 −13.4% とは桁が異なり、
+      <strong>乖離を格子解像度で説明することはできないと確定した</strong>。
+      Richardson 外挿値 0.03618 は最細格子より低く、
+      細分により一致が改善する見込みもない。
+    </li>
+    <li>
+      45° で既往解が示した +0.03% という小さな変化は偶然であり、
+      格子収束の根拠ではなかったことが確定した。
+    </li>
+    <li>
+      室内静圧の直接測定により、開口 1 枚あたりの流量係数を分離して求めた。
+      風下開口は 3 風向とも α = 0.65 〜 0.68 と教科書値に一致し、
+      風上開口は接近流の動圧回収により 0° で 0.83、45° で 0.65 となった。
+      開口自体の全圧損失は 0.01 〜 0.02 と小さく、損失の大半は下流の噴流散逸で生じる。
+    </li>
+    <li>
+      <strong>実験との乖離 −13 〜 −28% は開口部ではなく建物まわりの圧力場に帰属する。</strong>
+      実測した α のもとで実験値を再現するには ΔC<sub>p</sub> = 1.06 〜 1.22 が必要で、
+      CFD の 0.63 〜 0.82 はこれを 25 〜 49% 下回る。
+    </li>
+    <li>
+      ただし乱流モデルを標準 k-ε に替えると ΔC<sub>p</sub> は 6.4% 増加する一方で
+      風上開口の α が 15% 低下し、正味では実験との差が広がった
+      （−13.4% → −16.6%）。<strong>ΔC<sub>p</sub> と α は独立に調整できない。</strong>
+      改善策は乱流モデルの選択だけでは尽きない。
+    </li>
+    <li>
+      Flow Designer 既定に相当する設定（k-ε / 1 次風上 / SIMPLEC）は
+      2,771 反復・残差 10⁻⁸ で収束し、書籍準拠の設定（20,000 反復で
+      residualControl 未達）より 7 倍速く堅牢である。
+      一方で実験一致は悪化した。<strong>収束の速さと精度は別物である。</strong>
+    </li>
+    <li>
+      実務で用いられる自然換気の通風量式（2 開口の直列合成、α = 0.65）は、
+      同じ ΔC<sub>p</sub> のもとで実験値を 26 〜 32% 下回り、CFD より予測が悪い。
+      これは主として CFD の ΔC<sub>p</sub> を入力に用いたためであり、
+      式自体の構造は §6.2 の測定により妥当性が確認されている。
+    </li>
+    <li>
+      反復収束は AIJ §7.1 を 3 風向とも実質的に満たし、統計品質は既往解の 2 倍以上に改善した。
+      既往解で問題となっていた通風量のバーストは 1 件も発生しなかった。
+    </li>
+    <li>
+      δ = H/60 は壁関数の適用下限であり、本手法で取り得る最後の 1 段である。
+      さらなる精度向上には低 Re 型壁面処理または物体適合格子への移行を要する。
+    </li>
+  </ol>
+</section>
+
+<section>
+  <h2>付録　実行環境と所要時間</h2>
+  <div class="scroller">
+    <table>
+      <tbody>
+        <tr><td>実行環境</td><td class="num">WSL2 Ubuntu 22.04 / OpenFOAM v2606 / 10 MPI ランク</td></tr>
+        <tr><td>CPU</td><td class="num">Intel Core i7-1255U（15 W、2 P-core + 8 E-core）</td></tr>
+        <tr><td>反復速度</td><td class="num">1.7 〜 2.1 秒/反復（560,500 セル）</td></tr>
+        <tr><td>所要時間</td><td class="num">1 ケース約 10 時間、3 ケース計約 30 時間</td></tr>
+        <tr><td>メモリ</td><td class="num">10 ランク合計 1.8 GB</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    計算途中に筐体を冷却したところ反復速度が 2.01 から 1.80 秒へ約 10% 向上し、
+    以降その水準を維持した。室温の追加冷却による有意な改善は認められなかった。
+  </p>
+</section>
+
+<footer>
+  <div>出典: 空気調和・衛生工学会 編『はじめての環境・設備設計シミュレーション CFDガイドブック』
+  オーム社、平成29年11月30日 第1版第1刷、ISBN 978-4-274-22153-8。該当箇所は第4章 4.5節。</div>
+  <div>収束判定は AIJ「実務者のための建築物・市街地風環境評価のための CFD ガイドブック」§7.1 に準拠。
+  しきい値 1.0% は AIJ の規定値ではなく本検証で設定した値である。</div>
+  <div>GCI は Roache (1994) の定義による。安全係数 F<sub>s</sub> = 3.0
+  （観測次数が確立していない場合の推奨値）。</div>
+  <div>本報告の対象は 0° / 22.5° / 45° / 67.5° の 4 風向である。
+  格子収束の検証（4 章）は 3 段階の格子を用意した 0° / 22.5° / 45° のみを対象とし、
+  67.5° は細格子 1 段階のみのため通風量と流れ場の記載にとどめる。
+  67.5° の風洞実験値は書籍に記載がない。</div>
+  <div>流れ場の可視化動画（鉛直断面・水平断面・開口部を通る流管）は補足資料として別途公開する。</div>
+</footer>
+
+</div>
+
+</body>
+</html>

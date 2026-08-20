@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数値設定が通風解析に与える影響</title>
+<meta name="description" content="同一格子で乱流モデルと対流項の離散化だけを変えた比較。通風量の差は 3.7% だが屋根の剥離泡が消滅する。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="数値設定が通風解析に与える影響">
+<meta property="og:description" content="同一格子で乱流モデルと対流項の離散化だけを変えた比較。通風量の差は 3.7% だが屋根の剥離泡が消滅する。">
+<meta name="twitter:card" content="summary">
+<style>
+:root{--ground:#F4F7F8;--surface:#FFFFFF;--sunk:#EDF1F3;--ink:#16202A;
+--muted:#5A6B78;--faint:#8496A3;--border:#DBE3E8;--strong:#B9C7D0;
+--accent:#1D5E8C;--signal:#C1440E;--good:#0F6E56;--good-bg:#E2F0EB;
+--warn:#A8620A;--warn-bg:#F8EEDF;--bad:#9B2226;--bad-bg:#F7E6E6;
+--serif:"Hiragino Mincho ProN","Yu Mincho",YuMincho,"MS PMincho",serif;
+--sans:"Hiragino Sans","Yu Gothic",YuGothic,Meiryo,system-ui,sans-serif;
+--mono:ui-monospace,SFMono-Regular,Consolas,monospace;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+--ground:#10161B;--surface:#171F26;--sunk:#1D262E;--ink:#E3EAEF;
+--muted:#93A3AE;--faint:#71828E;--border:#27333C;--strong:#3B4B57;
+--accent:#77ADD8;--signal:#E48055;--good:#55B896;--good-bg:#142C26;
+--warn:#D69F55;--warn-bg:#2E2418;--bad:#E08585;--bad-bg:#2E1A1A;}}
+:root[data-theme="dark"]{--ground:#10161B;--surface:#171F26;--sunk:#1D262E;
+--ink:#E3EAEF;--muted:#93A3AE;--faint:#71828E;--border:#27333C;--strong:#3B4B57;
+--accent:#77ADD8;--signal:#E48055;--good:#55B896;--good-bg:#142C26;
+--warn:#D69F55;--warn-bg:#2E2418;--bad:#E08585;--bad-bg:#2E1A1A;}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);
+font-size:15px;line-height:1.85;margin:0;padding:0 20px 96px}
+.wrap{max-width:920px;margin:0 auto;display:grid;gap:44px}
+header{padding-top:60px;display:grid;gap:13px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;
+text-transform:uppercase;color:var(--faint)}
+h1{font-family:var(--serif);font-weight:600;font-size:33px;line-height:1.35;
+margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:0;max-width:64ch}
+.meta{display:flex;flex-wrap:wrap;gap:6px 20px;font-family:var(--mono);
+font-size:12.5px;color:var(--faint);border-top:1px solid var(--border);
+padding-top:14px}
+section{display:grid;gap:17px}
+h2{font-family:var(--serif);font-weight:600;font-size:21px;margin:0;
+display:flex;align-items:baseline;gap:12px}
+h2::after{content:"";flex:1;height:1px;background:var(--border)}
+h3{font-family:var(--serif);font-weight:600;font-size:17px;margin:6px 0 0}
+p{margin:0;max-width:72ch}
+.scroller{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:13.5px}
+caption{caption-side:top;text-align:left;color:var(--faint);font-size:12.5px;
+padding-bottom:7px}
+th,td{border-bottom:1px solid var(--border);padding:7px 11px;text-align:left;
+vertical-align:top}
+thead th{border-bottom:1.5px solid var(--strong);font-weight:600;
+color:var(--muted);font-size:12.5px;white-space:nowrap}
+td.num,th.num{text-align:right;font-family:var(--mono);white-space:nowrap}
+td.hi{color:var(--signal);font-weight:600}
+td.ok{color:var(--good);font-weight:600}
+tr.sub td{color:var(--muted)}
+.finding{background:var(--good-bg);border:1px solid var(--border);
+border-left:3px solid var(--good);padding:17px 21px;display:grid;gap:10px}
+.caution{background:var(--warn-bg);border:1px solid var(--border);
+border-left:3px solid var(--warn);padding:17px 21px;display:grid;gap:10px}
+.alarm{background:var(--bad-bg);border:1px solid var(--border);
+border-left:3px solid var(--bad);padding:17px 21px;display:grid;gap:10px}
+figure{margin:0;background:var(--surface);border:1px solid var(--border);
+border-radius:4px;padding:14px;display:grid;gap:11px}
+figure img{width:100%;display:block;border-radius:3px}
+figcaption{color:var(--muted);font-size:13px;max-width:74ch}
+ul,ol{margin:0;padding-left:1.2em;display:grid;gap:7px;max-width:72ch}
+li::marker{color:var(--faint)}
+code{font-family:var(--mono);font-size:.92em;background:var(--sunk);
+padding:1px 5px;border-radius:3px}
+footer{border-top:1px solid var(--border);padding-top:16px;font-size:12.5px;
+color:var(--faint);display:grid;gap:5px}
+@media(max-width:620px){h1{font-size:26px}body{font-size:14.5px}}
+
+.sitenav{max-width:920px;margin:0 auto;padding:18px 0 0;display:flex;
+flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
+.sitenav a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent}
+.sitenav a:hover{border-bottom-color:var(--accent)}
+</style>
+</head>
+<body>
+<nav class="sitenav">
+<a href="./">概要</a>
+<a href="grid-convergence.html">格子収束検証</a>
+<a href="numerics.html">数値設定の比較</a>
+<a href="videos.html">流れ場の動画</a>
+</nav>
+
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">crossvent 0° — numerical settings comparison</div>
+  <h1>数値設定が通風解析に与える影響</h1>
+  <p class="sub">同一格子・同一境界条件のもとで、乱流モデルと対流項の離散化だけを
+  変えた 4 ケース（2 × 2）を比較する。通風量の差は 3.7% にとどまったが、
+  流れ場の構造には決定的な違いが生じた。
+  積分量を決めるのは乱流モデルで、離散化スキームの寄与はほぼゼロ。
+  ただし剥離構造は両方が壊す。</p>
+  <div class="meta"><span>OpenFOAM v2606 / simpleFoam</span>
+  <span>560,500 セル</span><span>風向 0°</span>
+  <span>U<sub>H</sub> = 7 m/s, H = 0.15 m</span><span>Re = 70,000</span></div>
+</header>
+
+<section>
+  <h2>要旨</h2>
+  <div class="alarm">
+    <p>
+      標準 k-ε + 1 次風上に替えると、<strong>屋根面の剥離泡が完全に消滅した</strong>。
+      k-ω SST + QUICK では屋根長の 3/4 を覆い x/H = +0.50 で再付着していた逆流域が、
+      <strong>逆流セル 0 個</strong>になる。建物前面のスタンディング渦も
+      最大逆流速度が 0.437 から 0.129 U<sub>H</sub> へ 70% 減衰し、
+      到達距離が 0.93H から 0.53H へ縮む。
+    </p>
+    <p>
+      通風量の差は −3.7%（0.03665 → 0.03529）にすぎない。
+      <strong>積分量だけを見ていると、この構造の崩壊は見えない。</strong>
+    </p>
+  </div>
+  <div class="caution">
+    <p>
+      一方で計算コストは大きく違う。標準 k-ε + 1 次風上 + SIMPLEC は
+      <strong>2,771 反復・約 1.2 時間で残差 10⁻⁸ まで収束</strong>した。
+      k-ω SST + QUICK + SIMPLE は 20,000 反復・約 9.6 時間かけても
+      <code>residualControl</code> を満たさない。
+      <strong>速く厳しく収束したほうが、実験からも物理からも遠い。</strong>
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>1. 比較の設計</h2>
+  <p>
+    格子（560,500 セル）、境界条件、流入プロファイル（鉛直 52 点の実測値）、
+    開口の実装（<code>createBaffles</code> による厚さゼロ壁、24 × 12 = 288 面）は
+    完全に同一である。変えたのは次の 3 点のみ。
+  </p>
+  <div class="scroller">
+    <table>
+      <thead><tr><th>項目</th><th>ケース A</th><th>ケース B</th></tr></thead>
+      <tbody>
+        <tr><td>乱流モデル</td><td>k-ω SST</td><td>標準 k-ε（高 Re 型）</td></tr>
+        <tr><td>対流項（運動量）</td><td>bounded Gauss QUICK</td>
+        <td>bounded Gauss upwind（1 次）</td></tr>
+        <tr><td>対流項（乱流量）</td><td>limitedLinear 1</td><td>upwind</td></tr>
+        <tr><td>アルゴリズム</td><td>SIMPLE</td><td>SIMPLEC</td></tr>
+        <tr><td>由来</td><td>書籍 4.5 節の記載に準拠</td>
+        <td>市販ソフト Flow Designer の既定値</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    ε は ε = C<sub>μ</sub>kω（C<sub>μ</sub> = 0.09）で A の流入条件から換算し、
+    壁関数も <code>omegaWallFunction</code> → <code>epsilonWallFunction</code>、
+    <code>atmOmegaWallFunction</code> → <code>atmEpsilonWallFunction</code> と
+    一対一に対応させた。
+  </p>
+  <p>
+    A と B は乱流モデルと離散化を同時に変えているため、これだけでは
+    観測された差をどちらに帰属させるか確定できない。
+    そこで残る 2 つの組み合わせも計算し、2 × 2 で分離した（§7）。
+    なお SIMPLE と SIMPLEC は収束解を変えないので、精度の比較では交絡しない。
+  </p>
+  <div class="scroller">
+    <table>
+      <thead><tr><th>ケース</th><th>乱流モデル</th><th>対流項</th>
+      <th class="num">反復数</th><th class="num">収束</th></tr></thead>
+      <tbody>
+        <tr><td>A</td><td>k-ω SST</td><td>QUICK</td>
+        <td class="num">20,000</td><td class="num">未達</td></tr>
+        <tr><td>B</td><td>標準 k-ε</td><td>1 次風上</td>
+        <td class="num ok">2,771</td><td class="num ok">達成</td></tr>
+        <tr><td>C</td><td>標準 k-ε</td><td>QUICK</td>
+        <td class="num">20,000</td><td class="num">未達</td></tr>
+        <tr><td>D</td><td>k-ω SST</td><td>1 次風上</td>
+        <td class="num ok">2,833</td><td class="num ok">達成</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    収束が速いのは B と D、すなわち <strong>1 次風上を使った 2 ケース</strong>である。
+    乱流モデルによらない。SIMPLEC も両方に効いているが、
+    C（QUICK + SIMPLEC）が 20,000 反復でも未達であることから、
+    速さの主因は離散化スキームだと分かる。
+  </p>
+</section>
+
+<section>
+  <h2>2. 計算コストと収束</h2>
+  <div class="scroller">
+    <table>
+      <thead><tr><th>量</th><th class="num">A　SST / QUICK / SIMPLE</th>
+      <th class="num">B　k-ε / 1次風上 / SIMPLEC</th><th class="num">比</th></tr></thead>
+      <tbody>
+        <tr><td>反復数</td><td class="num">20,000</td>
+        <td class="num ok">2,771</td><td class="num">1/7.2</td></tr>
+        <tr><td>計算時間（10 MPI ランク）</td><td class="num">約 9.6 時間</td>
+        <td class="num ok">1.17 時間</td><td class="num">1/8.2</td></tr>
+        <tr><td>秒/反復</td><td class="num">1.72</td><td class="num">1.52</td>
+        <td class="num">0.88</td></tr>
+        <tr><td>終了理由</td><td class="num">endTime 到達</td>
+        <td class="num ok">residualControl 達成</td><td class="num">—</td></tr>
+        <tr><td>最終残差 U<sub>x</sub></td><td class="num">2.1 × 10⁻⁶</td>
+        <td class="num">1.8 × 10⁻⁸</td><td class="num">—</td></tr>
+        <tr><td>最終残差 p</td><td class="num hi">5.5 × 10⁻²</td>
+        <td class="num">1.0 × 10⁻⁷</td><td class="num">—</td></tr>
+        <tr><td>最終残差 k</td><td class="num">4.7 × 10⁻⁶</td>
+        <td class="num">1.2 × 10⁻⁶</td><td class="num">—</td></tr>
+        <tr><td>最終残差 ω / ε</td><td class="num">3.3 × 10⁻⁶</td>
+        <td class="num">1.9 × 10⁻⁸</td><td class="num">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    残差は最終 100 反復における初期残差の中央値。A は p の初期残差が 10⁻² の水準に
+    張り付いており、<code>residualControl</code> の閾値 10⁻⁵ には 3 桁届いていない。
+    A の通風量は AIJ §7.1 の窓平均処理を経た統計値（変動係数 0.145%）であり、
+    B は文字どおり一意に定まった値である。
+  </p>
+</section>
+
+<section>
+  <h2>3. 通風量と開口部</h2>
+  <div class="scroller">
+    <table>
+      <caption>C<sub>p</sub> の基準静圧は各ケースの建物直上・天井の下（z/H = 3.0〜4.5）に取った。ΔC<sub>p</sub> と α は圧力差なので基準に依存しない。</caption>
+      <thead><tr><th>量</th><th class="num">A</th><th class="num">B</th>
+      <th class="num">変化</th></tr></thead>
+      <tbody>
+        <tr><td>Q/(U<sub>H</sub>H²)</td><td class="num">0.03665</td>
+        <td class="num">0.03529</td><td class="num">−3.7%</td></tr>
+        <tr><td>風洞実験（0.0423）との差</td><td class="num">−13.4%</td>
+        <td class="num hi">−16.6%</td><td class="num">悪化</td></tr>
+        <tr class="sub"><td colspan="4">開口面の風圧係数</td></tr>
+        <tr><td>C<sub>p</sub> 風上開口の外側</td><td class="num">0.6816</td>
+        <td class="num">0.6980</td><td class="num">+0.016</td></tr>
+        <tr><td>C<sub>p</sub> 室内</td><td class="num">0.3740</td>
+        <td class="num">0.2954</td><td class="num">−0.079</td></tr>
+        <tr><td>C<sub>p</sub> 風下開口の外側</td><td class="num">−0.1176</td>
+        <td class="num">−0.1520</td><td class="num">−0.034</td></tr>
+        <tr><td>ΔC<sub>p</sub></td><td class="num">0.7992</td>
+        <td class="num ok">0.8500</td><td class="num">+6.4%</td></tr>
+        <tr class="sub"><td colspan="4">流量係数（室内静圧の実測から分離）</td></tr>
+        <tr><td>α 風上開口</td><td class="num">0.822</td>
+        <td class="num hi">0.695</td><td class="num">−15%</td></tr>
+        <tr><td>α 風下開口</td><td class="num">0.651</td>
+        <td class="num">0.659</td><td class="num">+1%</td></tr>
+        <tr><td>風上開口の損失分担</td><td class="num">38.5%</td>
+        <td class="num">47.4%</td><td class="num">+8.9pt</td></tr>
+        <tr><td>室内 C<sub>p</sub> の標準偏差</td><td class="num">0.0113</td>
+        <td class="num">0.0092</td><td class="num">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="finding">
+    <p>
+      <strong>ΔC<sub>p</sub> と α は逆向きに動く。</strong>
+      B は圧力差を 6.4% 増やした。これは実験値の再現に必要な向き
+      （α を実測値に固定すると ΔC<sub>p</sub> = 1.06 が必要）である。
+      にもかかわらず風上開口の α が 15% 落ちたため、正味では通風量が減り
+      実験との差は広がった。
+      <strong>「乱流モデルを替えれば圧力場が改善して精度が上がる」という
+      単純な期待は成立しない。</strong>
+    </p>
+    <p>
+      風下開口の α は 0.651 → 0.659 とほぼ不変である。
+      風下開口は静穏な室内から後流へ吐き出すだけなので、
+      数値設定の影響をほとんど受けない。
+      <strong>誤差は「接近流を持つ風上側」に集中する。</strong>
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>4. 流れ場の構造 — 決定的な差</h2>
+  <div class="scroller">
+    <table>
+      <caption>y/H = 0 断面における逆流域（U<sub>x</sub> &lt; 0）。同一の判定基準・同一の解像度で抽出した。</caption>
+      <thead><tr><th>構造</th><th>ケース</th><th class="num">x/H 範囲</th>
+      <th class="num">高さ z/H</th><th class="num">最大逆流 /U<sub>H</sub></th>
+      <th class="num">逆流セル数</th></tr></thead>
+      <tbody>
+        <tr><td rowspan="2">建物前面の渦</td><td>A</td>
+        <td class="num">−1.95 〜 −1.02</td><td class="num">0.233</td>
+        <td class="num">0.437</td><td class="num">552</td></tr>
+        <tr><td>B</td><td class="num">−1.55 〜 −1.02</td><td class="num">0.183</td>
+        <td class="num hi">0.129</td><td class="num hi">204</td></tr>
+
+        <tr><td rowspan="2">屋根の剥離泡</td><td>A</td>
+        <td class="num">−0.97 〜 +0.50</td><td class="num">1.133</td>
+        <td class="num">0.467</td><td class="num">497</td></tr>
+        <tr><td>B</td><td class="num hi" colspan="3">逆流なし（剥離泡が消滅）</td>
+        <td class="num hi">0</td></tr>
+
+        <tr><td rowspan="2">後流の再循環</td><td>A</td>
+        <td class="num">+1.02 〜 +3.82</td><td class="num">0.950</td>
+        <td class="num">0.289</td><td class="num">4728</td></tr>
+        <tr><td>B</td><td class="num">+1.02 〜 +3.45</td><td class="num">0.800</td>
+        <td class="num">0.289</td><td class="num">4094</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="alarm">
+    <p>
+      <strong>屋根面の剥離泡が完全に消えた。</strong>
+      A では屋根前縁で剥離した流れが屋根長の 3/4 を覆い、x/H = +0.50 で再付着する。
+      これは立方体まわりの実験でよく知られた構造である。
+      B では屋根上に逆流セルが 1 つも存在しない。流れが前縁で剥離せず、
+      屋根面に付着したまま流れている。
+    </p>
+    <p>
+      建物前面のスタンディング渦も、到達距離が 0.93H → 0.53H、
+      最大逆流速度が 0.437 → 0.129 U<sub>H</sub>（−70%）と大きく弱まる。
+      後流だけは比較的よく保たれ、再付着点が 3.82H → 3.45H と 10% 短くなる程度である。
+    </p>
+  </div>
+  <p>
+    この挙動は既知の欠陥そのものである。標準 k-ε は淀み点で乱流エネルギーの生成を
+    過大評価し、渦粘性を過大にする。過大な渦粘性は剥離を抑え込む。
+    1 次風上差分の数値拡散がこれに上乗せされる。
+    <strong>Flow Designer のリファレンスガイド自身が
+    「標準 k-ε は淀み点で乱流エネルギーを過大評価し、はく離予測を悪化させる」と
+    明記しており、本結果はその警告の定量的な裏づけになっている。</strong>
+  </p>
+  <figure>
+    <img src="assets/yaw00_xz.png" alt="A の鉛直断面">
+    <img src="assets/yaw00_fd_xz.png" alt="B の鉛直断面">
+    <figcaption><strong>図 1</strong>　y/H = 0 鉛直断面（開口軸）。上が A（k-ω SST / QUICK）、
+    下が B（標準 k-ε / 1 次風上）。塗り分けは風圧係数 C<sub>p</sub>（共通スケール、0 を白）、
+    流線の色は風速 |U|/U<sub>H</sub>。橙の太線が開口部。
+    A では屋根前縁の剥離と建物前面の逆流域が明瞭だが、B では屋根上の流れが
+    付着したままで、前面の逆流も弱い。室内の循環構造も異なる。</figcaption>
+  </figure>
+  <figure>
+    <img src="assets/yaw00_xy.png" alt="A の水平断面">
+    <img src="assets/yaw00_fd_xy.png" alt="B の水平断面">
+    <figcaption><strong>図 2</strong>　z/H = 0.5 水平断面（開口中心高さ）。上が A、下が B。
+    後流の一対の渦は両者で保たれるが、B では建物側面のせん断層が厚くなり、
+    後流の幅も広がる。1 次風上差分によるせん断層の数値的な塗りつぶしが見える。</figcaption>
+  </figure>
+
+  <h3>動画で見る</h3>
+  <p>
+    静止図では「屋根上の逆流セルが 497 個から 0 個になった」という数字でしか
+    示せないが、粒子の動きを追うと差が直接見える。
+    2 本を並べて再生すると比較しやすい。カラースケールは共通。
+  </p>
+  <figure>
+    <video controls loop muted playsinline preload="metadata"
+      style="width:100%;border-radius:3px;display:block;background:#0d1215">
+      <source src="assets/video/yaw00_xz.mp4" type="video/mp4">
+      お使いのブラウザは動画の再生に対応していません。</video>
+    <video controls loop muted playsinline preload="metadata"
+      style="width:100%;border-radius:3px;display:block;background:#0d1215;margin-top:10px">
+      <source src="assets/video/yaw00_fd_xz.mp4" type="video/mp4">
+      お使いのブラウザは動画の再生に対応していません。</video>
+    <figcaption><strong>動画 1</strong>　鉛直断面（y/H = 0）。
+    上が A（k-ω SST / QUICK）、下が B（標準 k-ε / 1 次風上）。
+    <strong>A では屋根前縁で剥がれた粒子が屋根の上で逆走して渦を巻くが、
+    B では屋根面に沿ってそのまま流れ去る。</strong>
+    建物前面でも、A の粒子が上流へ押し戻されるのに対し B はほとんど戻らない。</figcaption>
+  </figure>
+  <figure>
+    <video controls loop muted playsinline preload="metadata"
+      style="width:100%;border-radius:3px;display:block;background:#0d1215">
+      <source src="assets/video/yaw00_tube.mp4" type="video/mp4">
+      お使いのブラウザは動画の再生に対応していません。</video>
+    <video controls loop muted playsinline preload="metadata"
+      style="width:100%;border-radius:3px;display:block;background:#0d1215;margin-top:10px">
+      <source src="assets/video/yaw00_fd_tube.mp4" type="video/mp4">
+      お使いのブラウザは動画の再生に対応していません。</video>
+    <figcaption><strong>動画 2</strong>　3D 流管。上が A、下が B。
+    橙が風上開口へ流入する空気の起源、水色が流出先。
+    B では流入噴流が室内でより遠くまで届き、散逸が室の後半まで続く
+    （中心線の |U|/U<sub>H</sub> が x/H = −0.5 で A の 0.06 に対し B は 0.33）。</figcaption>
+  </figure>
+  <p>
+    水平断面の動画は
+    <a href="videos.html">流れ場の動画</a> のページに 4 風向ぶんの A 設定を、
+    B 設定はこのページの図 2 を参照。
+  </p>
+</section>
+
+<section>
+  <h2>5. 全圧の推移 — 損失がどこで生じるか</h2>
+  <div class="scroller">
+    <table>
+      <caption>中心線 (y = 0, z/H = 0.5) に沿った全圧 C<sub>pt</sub> = (p − p<sub>ref</sub> + |U|²/2)/(U<sub>H</sub>²/2)。</caption>
+      <thead><tr><th class="num">x/H</th><th class="num">A: C<sub>pt</sub></th>
+      <th class="num">B: C<sub>pt</sub></th><th class="num">差</th>
+      <th>位置</th></tr></thead>
+      <tbody>
+        <tr><td class="num">−2.00</td><td class="num">0.9052</td>
+        <td class="num">0.8556</td><td class="num">−0.050</td><td>上流</td></tr>
+        <tr><td class="num">−1.02</td><td class="num">0.8403</td>
+        <td class="num hi">0.7427</td><td class="num hi">−0.098</td>
+        <td>風上開口の直前</td></tr>
+        <tr><td class="num">−0.95</td><td class="num">0.8168</td>
+        <td class="num">0.6698</td><td class="num">−0.147</td><td>室内 流入直後</td></tr>
+        <tr><td class="num">−0.50</td><td class="num">0.3770</td>
+        <td class="num">0.4064</td><td class="num">+0.029</td><td>室内 前半</td></tr>
+        <tr><td class="num">0.00</td><td class="num">0.3771</td>
+        <td class="num">0.3078</td><td class="num">−0.069</td><td>室中央</td></tr>
+        <tr><td class="num">0.95</td><td class="num">0.3787</td>
+        <td class="num">0.3060</td><td class="num">−0.073</td><td>風下開口の直前</td></tr>
+        <tr><td class="num">1.02</td><td class="num">0.3669</td>
+        <td class="num">0.2648</td><td class="num">−0.102</td><td>室外 流出直後</td></tr>
+        <tr><td class="num">1.50</td><td class="num">−0.0286</td>
+        <td class="num">−0.1507</td><td class="num">−0.122</td><td>後流</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="finding">
+    <p>
+      <strong>損失は開口部ではなく、開口に到達する前の接近流で生じている。</strong>
+      x/H = −2.00 の時点で差は −0.050 にすぎないが、
+      風上開口の直前（x/H = −1.02）では −0.098 に広がる。
+      開口に入る前に全圧の 12% を余分に失っている。
+      これが風上開口の α が 0.822 から 0.695 へ落ちた実体である。
+    </p>
+    <p>
+      室内に入ってからの挙動も異なる。A では x/H = −0.95 から −0.50 の間で
+      噴流が完全に散逸し（|U|/U<sub>H</sub> が 0.60 → 0.06）、
+      以後 x/H = +0.95 まで全圧がほぼ一定に保たれる。
+      B では x/H = −0.50 でまだ |U|/U<sub>H</sub> = 0.33 あり、
+      散逸が室の後半まで続く。噴流の到達距離が伸びている。
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>6. 実務への含意</h2>
+  <ol>
+    <li>
+      <strong>収束の速さと精度は別物である。</strong>
+      B は 8.2 倍速く、残差は 3 〜 5 桁厳しい水準まで落ちた。
+      それでいて実験からも物理からも遠い。
+      「収束したから信頼できる」という判断は、ここで確実に誤る。
+    </li>
+    <li>
+      <strong>積分量だけの検証では不十分である。</strong>
+      通風量の差は 3.7% しかない。この数字だけを見ていると、
+      屋根の剥離泡が丸ごと消えていることに気づけない。
+      風環境評価・汚染質拡散・日射と対流の連成では、
+      この構造の有無が結果を支配する。
+    </li>
+    <li>
+      <strong>誤差は「接近流を持つ側」に集中する。</strong>
+      風下開口の α は数値設定にほとんど影響されない（0.651 → 0.659）。
+      検証の労力は流入側・上流側に配分すべきである。
+    </li>
+    <li>
+      <strong>1 次風上差分の代償は、積分量ではなく構造に現れる。</strong>
+      次節の 2 × 2 分離が示すとおり、通風量への影響は 0.1 〜 0.4% にすぎないが、
+      屋根の剥離泡は 4 分の 3 が消える。
+      温熱環境では吹出口ジェットの到達距離、上昇プルームの立ち上がり、
+      コールドドラフトの落下として現れる量である。
+      堅牢性のために 1 次風上を選ぶなら、何を評価したいのかと突き合わせて判断する。
+    </li>
+  </ol>
+  <div class="caution">
+    <p>
+      <strong>ここまでは A と B の 2 ケース比較であり、
+      乱流モデルと離散化を同時に変えている。</strong>
+      どちらに帰属するかは次節で分離する。
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>7. 2 × 2 による分離</h2>
+  <p>
+    残る 2 つの組み合わせ、C（標準 k-ε + QUICK）と D（k-ω SST + 1 次風上）を
+    同一格子・同一境界条件で計算し、乱流モデルと離散化の寄与を分離した。
+  </p>
+
+  <h3>通風量は乱流モデルがほぼ単独で決めている</h3>
+  <div class="scroller">
+    <table>
+      <caption>Q/(U<sub>H</sub>H²)。風向 0°。風洞実験は 0.0423。</caption>
+      <thead><tr><th></th><th class="num">QUICK</th><th class="num">1 次風上</th>
+      <th class="num">スキームの効果</th></tr></thead>
+      <tbody>
+        <tr><td>k-ω SST</td><td class="num">A 0.03650</td><td class="num">D 0.03665</td>
+        <td class="num">+0.4%</td></tr>
+        <tr><td>標準 k-ε</td><td class="num">C 0.03525</td><td class="num">B 0.03529</td>
+        <td class="num">+0.1%</td></tr>
+        <tr class="sub"><td>モデルの効果</td><td class="num hi">−3.4%</td>
+        <td class="num hi">−3.7%</td><td class="num">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="scroller">
+    <table>
+      <caption>風上開口の流量係数 α と開口面の風圧係数差 ΔC<sub>p</sub>。</caption>
+      <thead><tr><th>量</th><th class="num">A<br>SST/QUICK</th><th class="num">D<br>SST/風上</th>
+      <th class="num">C<br>k-ε/QUICK</th><th class="num">B<br>k-ε/風上</th></tr></thead>
+      <tbody>
+        <tr><td>α 風上</td><td class="num">0.822</td><td class="num">0.794</td>
+        <td class="num">0.702</td><td class="num">0.695</td></tr>
+        <tr><td>α 風下</td><td class="num">0.651</td><td class="num">0.657</td>
+        <td class="num">0.662</td><td class="num">0.659</td></tr>
+        <tr><td>ΔC<sub>p</sub></td><td class="num">0.7992</td><td class="num">0.8181</td>
+        <td class="num">0.8377</td><td class="num">0.8500</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="finding">
+    <p>
+      <strong>積分量は乱流モデルで決まる。</strong>離散化スキームを QUICK から
+      1 次風上へ落としても通風量は 0.1 〜 0.4% しか動かない。
+      一方モデルを k-ω SST から標準 k-ε へ替えると 3.4 〜 3.7% 落ちる。
+      風上開口の α（0.82 → 0.70）も ΔC<sub>p</sub>（0.80 → 0.84）も同じ構造である。
+      風下開口の α は 4 ケースとも 0.65 〜 0.66 で、どちらにも影響されない。
+    </p>
+  </div>
+
+  <h3>しかし剥離構造は両方が壊す</h3>
+  <div class="scroller">
+    <table>
+      <caption>y/H = 0 断面の逆流域（U<sub>x</sub> &lt; 0）のセル数。括弧内は再付着位置 x/H。</caption>
+      <thead><tr><th>構造</th><th class="num">QUICK</th><th class="num">1 次風上</th>
+      <th class="num">スキームの効果</th></tr></thead>
+      <tbody>
+        <tr class="sub"><td colspan="4">屋根の剥離泡</td></tr>
+        <tr><td>　k-ω SST</td><td class="num">A 497（+0.50）</td>
+        <td class="num">D 124（−0.07）</td><td class="num hi">−75%</td></tr>
+        <tr><td>　標準 k-ε</td><td class="num">C 3（−0.87）</td>
+        <td class="num hi">B 0（消滅）</td><td class="num">−3</td></tr>
+        <tr><td>　モデルの効果</td><td class="num hi">−99.4%</td>
+        <td class="num hi">−100%</td><td class="num">—</td></tr>
+        <tr class="sub"><td colspan="4">建物前面の渦</td></tr>
+        <tr><td>　k-ω SST</td><td class="num">A 552</td><td class="num">D 357</td>
+        <td class="num">−35%</td></tr>
+        <tr><td>　標準 k-ε</td><td class="num">C 195</td><td class="num">B 204</td>
+        <td class="num">+5%</td></tr>
+        <tr><td>　モデルの効果</td><td class="num">−65%</td><td class="num">−43%</td>
+        <td class="num">—</td></tr>
+        <tr class="sub"><td colspan="4">後流の再循環</td></tr>
+        <tr><td>　k-ω SST</td><td class="num">A 4728</td><td class="num">D 4997</td>
+        <td class="num">+6%</td></tr>
+        <tr><td>　標準 k-ε</td><td class="num">C 4243</td><td class="num">B 4094</td>
+        <td class="num">−4%</td></tr>
+        <tr><td>　モデルの効果</td><td class="num">−10%</td><td class="num">−18%</td>
+        <td class="num">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="alarm">
+    <p>
+      <strong>屋根の剥離泡を消す主犯は乱流モデルだが、
+      1 次風上差分だけでも 75% を消す。</strong>
+      標準 k-ε は QUICK のままでも剥離泡を 497 セルから 3 セルへ壊滅させる。
+      一方 k-ω SST を保ったまま 1 次風上にするだけでも 497 → 124 セルへ減り、
+      再付着点は屋根の中央（x/H = +0.50）から前縁近傍（−0.07）へ後退する。
+      <strong>両者は独立に、同じ向きに作用して重畳する。</strong>
+    </p>
+    <p>
+      建物前面の渦も同様で、モデルの寄与（−65%）がスキーム（−35%）より大きい。
+      後流だけはどちらにも比較的鈍感である（±20% 以内）。
+    </p>
+  </div>
+  <div class="caution">
+    <p>
+      <strong>本ページ初版の帰属を訂正する。</strong>
+      初版は「1 次風上差分の数値拡散と標準 k-ε の高い渦粘性が、
+      開口へ向かう流れの運動量を接近段階で削いでいる」と両者を並記したが、
+      2 × 2 で分離すると<strong>接近流の全圧低下も乱流モデルが主</strong>である。
+      風上開口直前（x/H = −1.02）の C<sub>pt</sub> はモデルの効果が −0.118、
+      スキームの効果が −0.044 で、モデルが 3 倍近い。
+      スキームの寄与はゼロではないが、主因ではない。
+    </p>
+  </div>
+  <div class="finding">
+    <p>
+      <strong>設計者への含意。</strong>
+      換気量や熱負荷といった<strong>積分量だけを見るなら</strong>、
+      1 次風上でも答えはほとんど変わらない。計算は 7 倍速くなる。
+      しかし<strong>剥離・再付着・ジェットの到達距離といった構造を見るなら</strong>、
+      1 次風上は剥離の 4 分の 3 を消してしまう。
+      <strong>何を評価したいかによって、許される手抜きが違う。</strong>
+      そして乱流モデルの選択は、どちらの目的にも効く。
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div>格子 560,500 セル（壁面 δ = H/60）。OpenFOAM v2606 / simpleFoam / 10 MPI ランク。
+  Intel Core i7-1255U。</div>
+  <div>出典: 空気調和・衛生工学会 編『はじめての環境・設備設計シミュレーション
+  CFDガイドブック』オーム社、第4章 4.5節。風洞実験値は印刷図からの目視読み取りで
+  ±0.0015 の誤差を含む。</div>
+  <div>Flow Designer の既定値は同ソフト 2024 版リファレンスガイドの記載による。
+  本比較は OpenFOAM 上で同等の設定を再現したものであり、
+  Flow Designer 本体で計算した結果ではない。</div>
+</footer>
+
+</div>
+
+</body>
+</html>

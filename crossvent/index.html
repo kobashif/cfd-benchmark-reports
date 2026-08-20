@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>通風ベンチマークの CFD 検証</title>
+<meta name="description" content="空気調和・衛生工学会 CFDガイドブック 4.5節の通風ベンチマークを OpenFOAM で解き、格子収束・反復収束・実験値との乖離の帰属を定量化した記録。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="通風ベンチマークの CFD 検証">
+<meta property="og:description" content="OpenFOAM による通風ベンチマークの検証記録。格子収束、流量係数の分離、数値設定の影響。">
+<meta name="twitter:card" content="summary">
+<style>
+:root{--ground:#F4F7F8;--surface:#FFFFFF;--sunk:#EDF1F3;--ink:#16202A;
+--muted:#5A6B78;--faint:#8496A3;--border:#DBE3E8;--strong:#B9C7D0;
+--accent:#1D5E8C;--signal:#C1440E;--good:#0F6E56;--good-bg:#E2F0EB;
+--warn:#A8620A;--warn-bg:#F8EEDF;
+--serif:"Hiragino Mincho ProN","Yu Mincho",YuMincho,"MS PMincho",serif;
+--sans:"Hiragino Sans","Yu Gothic",YuGothic,Meiryo,system-ui,sans-serif;
+--mono:ui-monospace,SFMono-Regular,Consolas,monospace;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+--ground:#10161B;--surface:#171F26;--sunk:#1D262E;--ink:#E3EAEF;
+--muted:#93A3AE;--faint:#71828E;--border:#27333C;--strong:#3B4B57;
+--accent:#77ADD8;--signal:#E48055;--good:#55B896;--good-bg:#142C26;
+--warn:#D69F55;--warn-bg:#2E2418;}}
+:root[data-theme="dark"]{--ground:#10161B;--surface:#171F26;--sunk:#1D262E;
+--ink:#E3EAEF;--muted:#93A3AE;--faint:#71828E;--border:#27333C;--strong:#3B4B57;
+--accent:#77ADD8;--signal:#E48055;--good:#55B896;--good-bg:#142C26;
+--warn:#D69F55;--warn-bg:#2E2418;}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);
+font-size:15px;line-height:1.85;margin:0;padding:0 20px 96px}
+.wrap{max-width:920px;margin:0 auto;display:grid;gap:44px}
+.sitenav{max-width:920px;margin:0 auto;padding:18px 0 0;display:flex;
+flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
+.sitenav a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent}
+.sitenav a:hover{border-bottom-color:var(--accent)}
+header{padding-top:52px;display:grid;gap:13px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;
+text-transform:uppercase;color:var(--faint)}
+h1{font-family:var(--serif);font-weight:600;font-size:33px;line-height:1.35;
+margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:0;max-width:64ch}
+.meta{display:flex;flex-wrap:wrap;gap:6px 20px;font-family:var(--mono);
+font-size:12.5px;color:var(--faint);border-top:1px solid var(--border);
+padding-top:14px}
+section{display:grid;gap:17px}
+h2{font-family:var(--serif);font-weight:600;font-size:21px;margin:0;
+display:flex;align-items:baseline;gap:12px}
+h2::after{content:"";flex:1;height:1px;background:var(--border)}
+p{margin:0;max-width:72ch}
+.cards{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:5px;
+padding:20px 22px;display:grid;gap:9px;align-content:start}
+.card h3{font-family:var(--serif);font-size:18px;margin:0}
+.card h3 a{color:var(--ink);text-decoration:none}
+.card h3 a:hover{color:var(--accent)}
+.card p{font-size:13.5px;color:var(--muted)}
+.card .tag{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+.scroller{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:460px;font-size:13.5px}
+th,td{border-bottom:1px solid var(--border);padding:7px 11px;text-align:left}
+thead th{border-bottom:1.5px solid var(--strong);font-weight:600;
+color:var(--muted);font-size:12.5px;white-space:nowrap}
+td.num,th.num{text-align:right;font-family:var(--mono);white-space:nowrap}
+.note{background:var(--warn-bg);border:1px solid var(--border);
+border-left:3px solid var(--warn);padding:17px 21px;display:grid;gap:10px}
+ul{margin:0;padding-left:1.2em;display:grid;gap:7px;max-width:72ch}
+li::marker{color:var(--faint)}
+code{font-family:var(--mono);font-size:.92em;background:var(--sunk);
+padding:1px 5px;border-radius:3px}
+footer{border-top:1px solid var(--border);padding-top:16px;font-size:12.5px;
+color:var(--faint);display:grid;gap:5px;max-width:72ch}
+a{color:var(--accent)}
+@media(max-width:620px){h1{font-size:26px}body{font-size:14.5px}}
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+<a href="./">概要</a>
+<a href="grid-convergence.html">格子収束検証</a>
+<a href="numerics.html">数値設定の比較</a>
+<a href="videos.html">流れ場の動画</a>
+</nav>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">OpenFOAM cross-ventilation benchmark</div>
+  <h1>通風ベンチマークの CFD 検証</h1>
+  <p class="sub">空気調和・衛生工学会『はじめての環境・設備設計シミュレーション
+  CFDガイドブック』4.5 節の通風ベンチマークを OpenFOAM で解き、
+  <strong>その計算が妥当であることを確認した記録</strong>です。
+  反復収束・格子収束・離散化の影響を順に切り分け、
+  流れ場の構造と開口部の流量係数を既知の値と照合しました。
+  通風量に残る実験との差についても、原因を数値誤差から切り離して示しています。</p>
+  <div class="meta"><span>OpenFOAM v2606 / simpleFoam</span>
+  <span>560,500 セル</span><span>風向 0° / 22.5° / 45° / 67.5°</span>
+  <span>Re = 70,000</span></div>
+</header>
+
+<section>
+  <h2>レポート</h2>
+  <div class="cards">
+    <div class="card">
+      <div class="tag">4 風向 / V&amp;V</div>
+      <h3><a href="grid-convergence.html">OpenFOAM による通風ベンチマークの検証</a></h3>
+      <p>反復収束（AIJ §7.1）、格子収束（GCI）、離散化の影響を順に切り分け、
+      流れ場の構造と開口部の流量係数を既知の値と照合。
+      通風量に残る乖離の帰属まで。</p>
+    </div>
+    <div class="card">
+      <div class="tag">風向 0° / 2 × 2</div>
+      <h3><a href="numerics.html">数値設定が通風解析に与える影響</a></h3>
+      <p>乱流モデルと対流項の離散化だけを変えた 4 ケースの比較。
+      通風量の差は 3.7% にとどまるが、屋根面の剥離泡は完全に消滅する。
+      2 × 2 で寄与を分離し、収束の速さと精度が別物であることを定量的に示す。</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>主な結果</h2>
+  <div class="scroller">
+    <table>
+      <thead><tr><th>風向</th><th class="num">本解析</th>
+      <th class="num">風洞実験</th><th class="num">差</th>
+      <th class="num">AIJ §7.1</th></tr></thead>
+      <tbody>
+        <tr><td>0°</td><td class="num">0.03665</td><td class="num">0.0423</td>
+        <td class="num">−13.4%</td><td class="num">22 / 22</td></tr>
+        <tr><td>22.5°</td><td class="num">0.03674</td><td class="num">0.0447</td>
+        <td class="num">−17.8%</td><td class="num">21 / 22</td></tr>
+        <tr><td>45°</td><td class="num">0.02922</td><td class="num">0.0408</td>
+        <td class="num">−28.4%</td><td class="num">21 / 22</td></tr>
+        <tr><td>67.5°</td><td class="num">0.02549</td><td class="num">—</td>
+        <td class="num">—</td><td class="num">22 / 22</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>通風量は Q/(U<sub>H</sub>H²)。軒高 H = 0.15 m、軒高風速 U<sub>H</sub> = 7.0 m/s で無次元化。</p>
+  <ul>
+    <li>室内静圧を直接測って開口の流量係数を分離した結果、
+    <strong>風下開口の α は 4 風向とも 0.65 ± 0.015</strong> と薄板オリフィスの
+    教科書値に一致した。風上開口は接近流の動圧回収により
+    0° で 0.83、67.5° で 0.60 と単調に低下する。</li>
+    <li>したがって実験との乖離は開口部ではなく
+    <strong>建物まわりの圧力場に帰属する</strong>。実測した α のもとで
+    実験値を再現するには開口面の風圧係数差 ΔC<sub>p</sub> が 25〜49% 不足している。</li>
+    <li>乱流モデルを標準 k-ε に替えると ΔC<sub>p</sub> は 6.4% 増える一方で
+    風上開口の α が 15% 落ち、正味では実験との差が広がった。
+    <strong>ΔC<sub>p</sub> と α は独立に調整できない。</strong></li>
+    <li>幾何相似な格子族（560,500 / 174,048 / 66,528 セル）で格子収束を評価すると、
+    見かけの次数 1.607、<strong>GCI は 1.5 〜 3.7%</strong>。
+    実験との乖離 13.4% とは桁が異なり、
+    <strong>乖離を格子解像度で説明することはできない</strong>と確定した。
+    壁面近傍だけを細分した格子族では次数が 0.17 にとどまり、外挿できなかった。</li>
+    <li>乱流モデルと離散化を 2 × 2 で分離すると、
+    <strong>通風量を決めるのは乱流モデル</strong>で、離散化スキームの寄与は 0.1 〜 0.4%。
+    ただし<strong>屋根の剥離泡は 1 次風上だけでも 4 分の 3 が消える</strong>。
+    何を評価したいかによって、許される手抜きが違う。</li>
+    <li>建物内部を除去した密閉ケースと比べると、
+    <strong>開口があることで壁面の風圧係数は 0.86 から 0.68 へ 0.18 下がる</strong>。
+    密閉時の風圧係数をそのまま通風計算に用いると駆動圧を動圧の 18% 過大評価し、
+    通風量にしておよそ 9% の過大評価になる。</li>
+  </ul>
+</section>
+
+<section>
+  <h2>流れ場の動画</h2>
+  <p>鉛直断面（y/H = 0）、水平断面（z/H = 0.5）、開口部を通る 3D 流管を
+  4 風向ぶん、計 12 本公開しています。</p>
+  <figure style="margin:0;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:14px;display:grid;gap:11px">
+    <video controls loop muted playsinline preload="metadata"
+      style="width:100%;border-radius:3px;display:block;background:#0d1215">
+      <source src="assets/video/yaw00_tube.mp4" type="video/mp4">
+      お使いのブラウザは動画の再生に対応していません。</video>
+    <figcaption style="color:var(--muted);font-size:13.5px">
+    風向 0° の 3D 流管。橙が風上開口へ流入する空気の起源、
+    水色が風下開口から流出する空気の行き先。</figcaption>
+  </figure>
+  <p><a href="videos.html"><strong>12 本すべてを見る →</strong></a></p>
+</section>
+
+<section>
+  <h2>この検証の位置づけ</h2>
+  <div class="note">
+    <p>
+      <strong>本検証は進行中です。</strong>実験値との乖離を
+      「開口部ではなく外部圧力場」まで絞り込み、必要な補正量を定量化しました。
+      反復誤差、格子誤差（GCI 1.5 〜 3.7%）、離散化スキーム（0.1 〜 0.4%）、
+      開口部の流量係数、計算領域・閉塞率のいずれも除外できています。
+      計算領域は AIJ 推奨を超える大きさまで広げて検証しましたが、
+      ΔC<sub>p</sub> は上がらず、むしろ低下しました。
+      <strong>消去法により、残る候補は「定常 RANS が後流の非定常性を扱えないこと」
+      のみとなりました。</strong>検証には非定常計算（URANS または DES）を要します。
+    </p>
+    <p>
+      合わないことを隠さずに書くことを方針としています。
+      誤った帰属をしていた箇所は、訂正した経緯ごと本文に残しています。
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div>出典: 空気調和・衛生工学会 編『はじめての環境・設備設計シミュレーション
+  CFDガイドブック』オーム社、平成29年11月30日 第1版第1刷、ISBN 978-4-274-22153-8。
+  該当箇所は第4章 4.5節。風洞実験値は同書掲載図からの目視読み取りで、
+  ±0.0015 の読み取り誤差を含みます。図表はすべて本検証で新たに作成したものです。</div>
+  <div>収束判定は日本建築学会「実務者のための建築物・市街地風環境評価のための
+  CFD ガイドブック」§7.1 に準拠。しきい値 1.0% は同ガイドブックの規定値ではなく
+  本検証で設定した値です。</div>
+  <div>格子収束指標は Roache (1994) および Celik et al. (2008) / ASME V&amp;V 20 に基づきます。</div>
+</footer>
+
+</div>
+</body>
+</html>

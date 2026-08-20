@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CFD 検証記録</title>
+<meta name="description" content="OpenFOAM による室内・通風 CFD の検証記録。公表実験値との比較を、格子・乱流モデル・数値設定まで遡って確定させたもの。">
+<style>
+:root{
+  --ground:#f6f8fa;
+  --surface:#ffffff;
+  --ink:#17202a;
+  --muted:#5b6b7b;
+  --faint:#8697a6;
+  --rule:#d9e1e8;
+  --accent:#1f5f8b;
+  --measured:#c0392b;
+  --ok:#1e7a4d;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0f1620;
+    --surface:#161f2b;
+    --ink:#e6edf3;
+    --muted:#9fb0c0;
+    --faint:#71838f;
+    --rule:#25313f;
+    --accent:#6fb2dc;
+    --measured:#e8776a;
+    --ok:#4cb682;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0f1620;
+  --surface:#161f2b;
+  --ink:#e6edf3;
+  --muted:#9fb0c0;
+  --faint:#71838f;
+  --rule:#25313f;
+  --accent:#6fb2dc;
+  --measured:#e8776a;
+  --ok:#4cb682;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",YuGothic,Meiryo,system-ui,sans-serif;
+  font-size:16px;
+  line-height:1.85;
+  font-feature-settings:"palt" 1;
+}
+.wrap{max-width:60rem;margin:0 auto;padding:clamp(2rem,5vw,4.5rem) clamp(1.1rem,4vw,2rem) 4rem}
+
+/* ---------- header ---------- */
+header{border-bottom:2px solid var(--ink);padding-bottom:1.6rem;margin-bottom:.5rem}
+.eyebrow{
+  font-size:.74rem;letter-spacing:.18em;color:var(--muted);
+  margin:0 0 .7rem;font-weight:600;
+}
+h1{
+  font-family:Georgia,"Yu Mincho",YuMincho,"Hiragino Mincho ProN","MS PMincho",serif;
+  font-size:clamp(1.9rem,5vw,2.7rem);
+  line-height:1.3;margin:0 0 .9rem;font-weight:600;
+  text-wrap:balance;letter-spacing:.01em;
+}
+.lede{margin:0;max-width:46rem;color:var(--muted);font-size:1.02rem}
+.lede strong{color:var(--ink);font-weight:600}
+
+/* ---------- entries ---------- */
+.entry{
+  display:grid;
+  grid-template-columns:11.5rem 1fr;
+  gap:0 2.2rem;
+  padding:2.4rem 0;
+  border-bottom:1px solid var(--rule);
+}
+.meta{display:flex;flex-direction:column;gap:1.1rem;padding-top:.35rem}
+.meta dt{
+  font-size:.7rem;letter-spacing:.14em;color:var(--faint);
+  font-weight:600;margin:0 0 .15rem;
+}
+.meta dd{margin:0;font-size:.86rem;line-height:1.65;color:var(--muted)}
+.meta .src{color:var(--ink);font-weight:600}
+
+.entry h2{
+  font-family:Georgia,"Yu Mincho",YuMincho,"Hiragino Mincho ProN","MS PMincho",serif;
+  font-size:1.42rem;line-height:1.45;margin:0 0 .55rem;font-weight:600;
+  text-wrap:balance;
+}
+.entry h2 a{color:var(--ink);text-decoration:none;border-bottom:2px solid var(--accent);padding-bottom:.08em}
+.entry h2 a:hover{color:var(--accent)}
+.entry h2 a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+.entry p{margin:0 0 1rem;color:var(--muted);font-size:.95rem}
+
+.figures{
+  display:flex;flex-wrap:wrap;gap:0 1.9rem;
+  margin:0 0 1.1rem;padding:0;list-style:none;
+}
+.figures div{padding:.55rem 0}
+.figures dt{
+  font-size:.68rem;letter-spacing:.1em;color:var(--faint);margin:0 0 .1rem;font-weight:600;
+}
+.figures dd{
+  margin:0;font-size:1.02rem;font-weight:600;color:var(--ink);
+  font-variant-numeric:tabular-nums;line-height:1.4;
+}
+.figures dd.good{color:var(--ok)}
+.figures dd.open{color:var(--measured)}
+
+.tags{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:.4rem}
+.tags li{
+  font-size:.73rem;color:var(--muted);
+  border:1px solid var(--rule);border-radius:2px;
+  padding:.16rem .5rem;background:var(--surface);
+  font-variant-numeric:tabular-nums;
+}
+
+/* ---------- footer ---------- */
+footer{margin-top:2.6rem;font-size:.85rem;color:var(--muted)}
+footer h3{
+  font-size:.72rem;letter-spacing:.14em;color:var(--faint);
+  margin:0 0 .5rem;font-weight:600;
+}
+footer p{margin:0 0 .8rem;max-width:46rem}
+footer a{color:var(--accent)}
+
+@media (max-width:44rem){
+  .entry{grid-template-columns:1fr;gap:1.1rem}
+  .meta{flex-direction:row;flex-wrap:wrap;gap:.2rem 2rem;padding-top:0}
+  .meta div{min-width:9rem}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">OpenFOAM / Validation &amp; Verification</p>
+  <h1>CFD 検証記録</h1>
+  <p class="lede">
+    公表されている実験値に対して、計算が再現できることを確認した記録です。
+    <strong>反復収束・格子収束・離散化の影響を順に切り分けてから</strong>実験と比べており、
+    残った差がどこに由来するのかまで書いています。
+    合わなかった項目と、途中で撤回した結論も、そのまま残してあります。
+  </p>
+</header>
+
+<article class="entry">
+  <dl class="meta">
+    <div>
+      <dt>対象</dt>
+      <dd>通風（等温）<br>外部風・開口流れ</dd>
+    </div>
+    <div>
+      <dt>比較先</dt>
+      <dd class="src">風洞実験</dd>
+      <dd>空気調和・衛生工学会<br>『はじめての環境・設備設計シミュレーション CFD ガイドブック』4.5 節</dd>
+    </div>
+  </dl>
+  <div>
+    <h2><a href="crossvent/">通風ベンチマークの CFD 検証</a></h2>
+    <p>
+      4 風向について通風量と流れ場を風洞実験と照合。
+      室内静圧を直接測って開口の流量係数を分離し、通風量に残る差の原因を数値誤差から切り離しました。
+      乱流モデルと対流項の離散化だけを変えた 2 × 2 の比較も収録しています。
+    </p>
+    <dl class="figures">
+      <div>
+        <dt>風下開口の流量係数 α</dt>
+        <dd class="good">0.65 ± 0.015</dd>
+      </div>
+      <div>
+        <dt>通風量（風向 0°）</dt>
+        <dd class="open">実験比 −13.4 %</dd>
+      </div>
+      <div>
+        <dt>数値設定による差</dt>
+        <dd>3.7 %</dd>
+      </div>
+    </dl>
+    <ul class="tags">
+      <li>OpenFOAM v2606 / simpleFoam</li>
+      <li>560,500 セル</li>
+      <li>風向 0° / 22.5° / 45° / 67.5°</li>
+      <li>Re = 70,000</li>
+      <li>格子収束 GCI</li>
+    </ul>
+  </div>
+</article>
+
+<article class="entry">
+  <dl class="meta">
+    <div>
+      <dt>対象</dt>
+      <dd>室内気流（等温）<br>スロット吹出口</dd>
+    </div>
+    <div>
+      <dt>比較先</dt>
+      <dd class="src">公表 LDV 実測値</dd>
+      <dd>IEA Annex 20 二次元テストケース<br>Nielsen (1990)</dd>
+    </div>
+  </dl>
+  <div>
+    <h2><a href="annex20-2d/">IEA Annex 20 室内気流ベンチマーク</a></h2>
+    <p>
+      温熱環境を扱う前に、まず流れ場が再現できることを確定させるための検証です。
+      流れ場が合わないまま熱を入れると、乖離が流れ由来か熱由来か切り分けられません。
+      定常解が極限周期に陥っていることを見つけて URANS に移し、時間平均で実測と照合しました。
+    </p>
+    <dl class="figures">
+      <div>
+        <dt>格子収束（内部）</dt>
+        <dd class="good">GCI 1.08 %</dd>
+      </div>
+      <div>
+        <dt>モデル誤差</dt>
+        <dd>6.4 %</dd>
+      </div>
+      <div>
+        <dt>実験は三次元</dt>
+        <dd>「2D」は呼称</dd>
+      </div>
+    </dl>
+    <ul class="tags">
+      <li>OpenFOAM v2606 / pimpleFoam</li>
+      <li>L1 / L2 / L3 の 3 格子</li>
+      <li>URANS 時間平均</li>
+      <li>壁関数の比較</li>
+      <li>撤回した結論も収録</li>
+    </ul>
+  </div>
+</article>
+
+<article class="entry">
+  <dl class="meta">
+    <div>
+      <dt>対象</dt>
+      <dd>混合対流（非等温）<br>夏期冷房・実大室</dd>
+    </div>
+    <div>
+      <dt>比較先</dt>
+      <dd class="src">実測 3 機関</dd>
+      <dd>IEA Annex 20 Subtask 1 報告書<br>Lemaire (1993)、Blomqvist・Heikkinen・Fossdal</dd>
+    </div>
+  </dl>
+  <div>
+    <h2><a href="annex20-caseE/">IEA Annex 20 テストケース E</a></h2>
+    <p>
+      実大試験室 4.2 × 3.6 × 2.5 m の非等温ベンチマーク。
+      窓からの熱取得と事務室の換気量という、実務そのままの条件です。
+      PMV / PPD・ドラフト率・空気齢（SVE3）まで同じ計算から取り出しています。
+      給気風量が仕様より 23 % 不足していたことを<strong>排気の空気齢が理論値の 1.30 倍になった</strong>ことから発見し、
+      その経緯も残しました。
+    </p>
+    <dl class="figures">
+      <div>
+        <dt>給気風量</dt>
+        <dd class="good">+0.01 %</dd>
+      </div>
+      <div>
+        <dt>排気の空気齢 / τ<sub>n</sub></dt>
+        <dd class="good">0.994</dd>
+      </div>
+      <div>
+        <dt>居住域の風速・温度</dt>
+        <dd class="good">実測帯に一致</dd>
+      </div>
+      <div>
+        <dt>天井噴流の剥離位置</dt>
+        <dd class="open">未一致</dd>
+      </div>
+    </dl>
+    <ul class="tags">
+      <li>OpenFOAM v2606 / buoyantSimpleFoam</li>
+      <li>244,200 セル</li>
+      <li>E1 / E2 / E3（Ar を 32 倍振る）</li>
+      <li>浮力生成項 G_b の有無</li>
+      <li>快適性指標・空気齢</li>
+    </ul>
+  </div>
+</article>
+
+<footer>
+  <h3>資料の取り扱い</h3>
+  <p>
+    第三者の資料（書籍・報告書・実験データ）は<strong>再配布していません</strong>。
+    各レポートには出典を明記し、必要な数値のみを引用しています。
+    計算ファイルとスクリプトは非公開のリポジトリで管理しており、ここには置いていません。
+  </p>
+  <p>
+    使用ソルバーは OpenFOAM v2606（ESI）。
+    各レポートは計算結果から自動生成しており、記載の数値は実行ログと同じものです。
+  </p>
+</footer>
+
+</div>
+</body>
+</html>

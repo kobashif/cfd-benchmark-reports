@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>流れ場の動画 — 通風ベンチマークの CFD 検証</title>
+<meta name="description" content="通風ベンチマークの流れ場動画。0°/22.5°/45°/67.5° の鉛直断面・水平断面・3D 流管、計 12 本。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="流れ場の動画 — 通風ベンチマークの CFD 検証">
+<meta property="og:description" content="4 風向の鉛直断面・水平断面・3D 流管、計 12 本。">
+<meta name="twitter:card" content="summary">
+<style>
+:root{--ground:#F4F7F8;--surface:#FFFFFF;--sunk:#EDF1F3;--ink:#16202A;
+--muted:#5A6B78;--faint:#8496A3;--border:#DBE3E8;--strong:#B9C7D0;
+--accent:#1D5E8C;--signal:#C1440E;--warn:#A8620A;--warn-bg:#F8EEDF;
+--serif:"Hiragino Mincho ProN","Yu Mincho",YuMincho,"MS PMincho",serif;
+--sans:"Hiragino Sans","Yu Gothic",YuGothic,Meiryo,system-ui,sans-serif;
+--mono:ui-monospace,SFMono-Regular,Consolas,monospace;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+--ground:#10161B;--surface:#171F26;--sunk:#1D262E;--ink:#E3EAEF;
+--muted:#93A3AE;--faint:#71828E;--border:#27333C;--strong:#3B4B57;
+--accent:#77ADD8;--signal:#E48055;--warn:#D69F55;--warn-bg:#2E2418;}}
+:root[data-theme="dark"]{--ground:#10161B;--surface:#171F26;--sunk:#1D262E;
+--ink:#E3EAEF;--muted:#93A3AE;--faint:#71828E;--border:#27333C;--strong:#3B4B57;
+--accent:#77ADD8;--signal:#E48055;--warn:#D69F55;--warn-bg:#2E2418;}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);
+font-size:15px;line-height:1.85;margin:0;padding:0 20px 96px}
+.wrap{max-width:920px;margin:0 auto;display:grid;gap:42px}
+.sitenav{max-width:920px;margin:0 auto;padding:18px 0 0;display:flex;
+flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
+.sitenav a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent}
+.sitenav a:hover{border-bottom-color:var(--accent)}
+header{padding-top:52px;display:grid;gap:13px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;
+text-transform:uppercase;color:var(--faint)}
+h1{font-family:var(--serif);font-weight:600;font-size:33px;line-height:1.35;
+margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:0;max-width:66ch}
+.meta{display:flex;flex-wrap:wrap;gap:6px 20px;font-family:var(--mono);
+font-size:12.5px;color:var(--faint);border-top:1px solid var(--border);
+padding-top:14px}
+section{display:grid;gap:18px}
+h2{font-family:var(--serif);font-weight:600;font-size:21px;margin:0;
+display:flex;align-items:baseline;gap:12px}
+h2::after{content:"";flex:1;height:1px;background:var(--border)}
+p{margin:0;max-width:72ch}
+figure{margin:0;background:var(--surface);border:1px solid var(--border);
+border-radius:5px;padding:14px;display:grid;gap:11px}
+video{width:100%;border-radius:3px;display:block;background:#0d1215}
+figcaption{display:grid;gap:4px}
+figcaption .k{font-weight:600;font-size:14.5px}
+figcaption .d{color:var(--muted);font-size:13.5px;max-width:72ch}
+.note{background:var(--warn-bg);border:1px solid var(--border);
+border-left:3px solid var(--warn);padding:17px 21px;display:grid;gap:10px}
+footer{border-top:1px solid var(--border);padding-top:16px;font-size:12.5px;
+color:var(--faint);display:grid;gap:5px;max-width:72ch}
+a{color:var(--accent)}
+@media(max-width:620px){h1{font-size:26px}body{font-size:14.5px}}
+</style>
+</head>
+<body>
+<nav class="sitenav">
+<a href="./">概要</a>
+<a href="grid-convergence.html">格子収束検証</a>
+<a href="numerics.html">数値設定の比較</a>
+<a href="videos.html">流れ場の動画</a>
+</nav>
+<div class="wrap">
+<header>
+<div class="eyebrow">flow field animations — 4 wind directions</div>
+<h1>流れ場の動画</h1>
+<p class="sub">560,500 セルの直交格子で 20,000 反復解いた定常場から、断面の流れと開口部を通る流管を可視化した。座標は軒高 H = 0.15 m で無次元化している。</p>
+<div class="meta"><span>OpenFOAM v2606 / simpleFoam</span><span>k-ω SST</span><span>δ = H/60</span><span>U<sub>H</sub> = 7 m/s</span></div>
+</header>
+<div class="note"><p>定常解析なので時間発展はない。断面の粒子は定常速度場に沿って流した無質量粒子で、<strong>面内成分のみで移流している（面外成分は無視）</strong>。流管は開口の輪郭を通る流線が張る面で、積分時間を閾値で切って伸ばしている。</p><p>カラースケールは 4 風向で共通の固定値（C<sub>p</sub> は −1.2〜1.0 で 0 を白、|U|/U<sub>H</sub> は 0〜1.35）。同じ色が同じ値を意味するので風向間で直接比較できる。</p></div>
+<section>
+<h2>風向 0°</h2>
+<p class="sub">AIJ §7.1 の全 22 監視量が収束　通風量 Q/(U<sub>H</sub>H²) = <strong>0.03665</strong></p>
+<figure>
+<video controls loop muted playsinline preload="metadata"><source src="assets/video/yaw00_xz.mp4" type="video/mp4">お使いのブラウザは動画の再生に対応していません。</video>
+<figcaption><span class="k">鉛直断面　y/H = 0（開口軸）</span><span class="d">風圧係数 C<sub>p</sub> のコンターに風速ベクトルと粒子を重ねた。建物前面のスタンディング渦、屋根前縁の剥離による負圧、開口から入った噴流が床へ降下する様子が見える。</span></figcaption>
+</figure>
+<figure>
+<video controls loop muted playsinline preload="metadata"><source src="assets/video/yaw00_xy.mp4" type="video/mp4">お使いのブラウザは動画の再生に対応していません。</video>
+<figcaption><span class="k">水平断面　z/H = 0.5（開口中心高さ）</span><span class="d">風速 |U|/U<sub>H</sub> のコンターに風速ベクトルと粒子を重ねた。建物側面での加速と、後流の対渦が見える。</span></figcaption>
+</figure>
+<figure>
+<video controls loop muted playsinline preload="metadata"><source src="assets/video/yaw00_tube.mp4" type="video/mp4">お使いのブラウザは動画の再生に対応していません。</video>
+<figcaption><span class="k">3D 流管　開口部を通る空気の起源と行き先</span><span class="d">開口矩形の外周を種として、風上側は時間を遡って上流へ、風下側は時間を追って後流へ、流線が張る面を伸ばしている。橙が流入空気の起源、水色が流出空気の行き先。</span></figcaption>
+</figure>
+</section>
+<section>
+<h2>風向 22.5°</h2>
+<p class="sub">22 監視量中 21 が収束　通風量 Q/(U<sub>H</sub>H²) = <strong>0.03674</strong></p>
+<figure>
+<video controls loop muted playsinline preload="metadata"><source src="assets/video/yaw22p5_xz.mp4" type="video/mp4">お使いのブラウザは動画の再生に対応していません。</video>
+<figcaption><span class="k">鉛直断面　y/H = 0（開口軸）</span><span class="d">風圧係数 C<sub>p</sub> のコンターに風速ベクトルと粒子を重ねた。建物前面のスタンディング渦、屋根前縁の剥離による負圧、開口から入った噴流が床へ降下する様子が見える。</span></figcaption>
+</figure>
+<figure>
+<video controls loop muted playsinline preload="metadata"><source src="assets/video/yaw22p5_xy.mp4" type="video/mp4">お使いのブラウザは動画の再生に対応していません。</video>
+<figcaption><span class="k">水平断面　z/H = 0.5（開口中心高さ）</span><span class="d">風速 |U|/U<sub>H</sub> のコンターに風速ベクトルと粒子を重ねた。建物側面での加速と、後流の対渦が見える。</span></figcaption>
+</figure>
+<figure>
+<video controls loop muted playsinline preload="metadata"><source src="assets/video/yaw22p5_tube.mp4" type="video/mp4">お使いのブラウザは動画の再生に対応していません。</video>
+<figcaption><span class="k">3D 流管　開口部を通る空気の起源と行き先</span><span class="d">開口矩形の外周を種として、風上側は時間を遡って上流へ、風下側は時間を追って後流へ、流線が張る面を伸ばしている。橙が流入空気の起源、水色が流出空気の行き先。</span></figcaption>
+</figure>
+</section>
+<section>
+<h2>風向 45°</h2>
+<p class="sub">22 監視量中 21 が収束　通風量 Q/(U<sub>H</sub>H²) = <strong>0.02922</strong></p>
+<figure>
+<video controls loop muted playsinline preload="metadata"><source src="assets/video/yaw45_xz.mp4" type="video/mp4">お使いのブラウザは動画の再生に対応していません。</video>
+<figcaption><span class="k">鉛直断面　y/H = 0（開口軸）</span><span class="d">風圧係数 C<sub>p</sub> のコンターに風速ベクトルと粒子を重ねた。建物前面のスタンディング渦、屋根前縁の剥離による負圧、開口から入った噴流が床へ降下する様子が見える。</span></figcaption>
+</figure>
+<figure>
+<video controls loop muted playsinline preload="metadata"><source src="assets/video/yaw45_xy.mp4" type="video/mp4">お使いのブラウザは動画の再生に対応していません。</video>
+<figcaption><span class="k">水平断面　z/H = 0.5（開口中心高さ）</span><span class="d">風速 |U|/U<sub>H</sub> のコンターに風速ベクトルと粒子を重ねた。建物側面での加速と、後流の対渦が見える。</span></figcaption>
+</figure>
+<figure>
+<video controls loop muted playsinline preload="metadata"><source src="assets/video/yaw45_tube.mp4" type="video/mp4">お使いのブラウザは動画の再生に対応していません。</video>
+<figcaption><span class="k">3D 流管　開口部を通る空気の起源と行き先</span><span class="d">開口矩形の外周を種として、風上側は時間を遡って上流へ、風下側は時間を追って後流へ、流線が張る面を伸ばしている。橙が流入空気の起源、水色が流出空気の行き先。</span></figcaption>
+</figure>
+</section>
+<section>
+<h2>風向 67.5°</h2>
+<p class="sub">AIJ §7.1 の全 22 監視量が収束　通風量 Q/(U<sub>H</sub>H²) = <strong>0.02549</strong></p>
+<figure>
+<video controls loop muted playsinline preload="metadata"><source src="assets/video/yaw67p5_xz.mp4" type="video/mp4">お使いのブラウザは動画の再生に対応していません。</video>
+<figcaption><span class="k">鉛直断面　y/H = 0（開口軸）</span><span class="d">風圧係数 C<sub>p</sub> のコンターに風速ベクトルと粒子を重ねた。建物前面のスタンディング渦、屋根前縁の剥離による負圧、開口から入った噴流が床へ降下する様子が見える。</span></figcaption>
+</figure>
+<figure>
+<video controls loop muted playsinline preload="metadata"><source src="assets/video/yaw67p5_xy.mp4" type="video/mp4">お使いのブラウザは動画の再生に対応していません。</video>
+<figcaption><span class="k">水平断面　z/H = 0.5（開口中心高さ）</span><span class="d">風速 |U|/U<sub>H</sub> のコンターに風速ベクトルと粒子を重ねた。建物側面での加速と、後流の対渦が見える。</span></figcaption>
+</figure>
+<figure>
+<video controls loop muted playsinline preload="metadata"><source src="assets/video/yaw67p5_tube.mp4" type="video/mp4">お使いのブラウザは動画の再生に対応していません。</video>
+<figcaption><span class="k">3D 流管　開口部を通る空気の起源と行き先</span><span class="d">開口矩形の外周を種として、風上側は時間を遡って上流へ、風下側は時間を追って後流へ、流線が張る面を伸ばしている。橙が流入空気の起源、水色が流出空気の行き先。</span></figcaption>
+</figure>
+</section>
+<footer><div>断面は ParaView で等間隔格子に再サンプリングし matplotlib で描画。流管は開口外周の 48 種点から出した流線を同一の積分時間で対応付けて面を張り、ParaView でレンダリングした。</div><div>出典: 空気調和・衛生工学会 編『はじめての環境・設備設計シミュレーション CFDガイドブック』オーム社、第4章 4.5節。</div></footer></div>
+</body>
+</html>
