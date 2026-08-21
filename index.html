@@ -132,6 +132,12 @@ footer a{color:var(--accent)}
   .meta{flex-direction:row;flex-wrap:wrap;gap:.2rem 2rem;padding-top:0}
   .meta div{min-width:9rem}
 }
+
+    .caveat{border-left:3px solid var(--measured);padding-left:14px;
+      margin-top:14px}
+    .prov{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:9px;
+      font-size:11px;letter-spacing:.04em;vertical-align:middle;
+      border:1px solid currentColor;opacity:.75;font-weight:600}
 </style>
 </head>
 <body>
@@ -255,6 +261,13 @@ footer a{color:var(--accent)}
       給気風量が仕様より 23 % 不足していたことを<strong>排気の空気齢が理論値の 1.30 倍になった</strong>ことから発見し、
       その経緯も残しました。
     </p>
+    <p class="caveat">
+      <strong>定常解が収束していません。</strong>
+      残差は下がってから上がって高止まりし、p<sub>rgh</sub> は判定値に 4 桁届きません（極限周期）。
+      収束しないのは<strong>剥離が起きる E1・E2 だけ</strong>で、剥離しない E3 は最後まで下がります。
+      給気風量・排気空気齢・熱収支といった積分量は反復の細部に依存しない拘束なので有効ですが、
+      <strong>剥離位置と居住域風速は暫定値</strong>です。現在 URANS で取り直しています。
+    </p>
     <dl class="figures">
       <div>
         <dt>給気風量</dt>
@@ -266,15 +279,15 @@ footer a{color:var(--accent)}
       </div>
       <div>
         <dt>居住域の風速・温度</dt>
-        <dd class="good">実測帯に一致</dd>
+        <dd class="good">実測帯に一致<span class="prov">暫定</span></dd>
       </div>
       <div>
         <dt>天井噴流の剥離位置</dt>
-        <dd class="open">未一致</dd>
+        <dd class="open">未一致<span class="prov">暫定</span></dd>
       </div>
     </dl>
     <ul class="tags">
-      <li>OpenFOAM v2606 / buoyantSimpleFoam</li>
+      <li>OpenFOAM v2606 / buoyantSimpleFoam &rarr; URANS へ移行中</li>
       <li>244,200 セル</li>
       <li>E1 / E2 / E3（Ar を 32 倍振る）</li>
       <li>浮力生成項 G_b の有無</li>
