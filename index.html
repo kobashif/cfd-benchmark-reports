@@ -158,6 +158,51 @@ footer a{color:var(--accent)}
   <dl class="meta">
     <div>
       <dt>対象</dt>
+      <dd>市街地風環境（等温）<br>単独建物まわりの流れ</dd>
+    </div>
+    <div>
+      <dt>比較先</dt>
+      <dd class="src">風洞実験</dd>
+      <dd>AIJ 市街地風環境ベンチマーク ケース A<br>Meng &amp; Hibi (1998)、CC BY 4.0</dd>
+    </div>
+  </dl>
+  <div>
+    <h2><a href="aij-caseA/">AIJ 市街地風環境ベンチマーク ケース A</a></h2>
+    <p>
+      1:1:2 角柱まわりの風速と乱流エネルギーを、186 点の風洞実験値と照合。
+      <strong>最初の格子は伸長比の判定を誤っており、結論を一度撤回してやり直しています。</strong>
+      基準に適合させた格子では格子の影響がモデル間の差の 120 分の 1 になり、
+      そこではじめて乱流モデルの序列を論じられるようになりました。
+      撤回した結論も経緯とともに残してあります。
+    </p>
+    <dl class="figures">
+      <div>
+        <dt>風速比の回帰（原点通過）</dt>
+        <dd class="good">a = 0.93, R&sup2; = 0.92</dd>
+      </div>
+      <div>
+        <dt>全 186 点の RMSE</dt>
+        <dd class="good">0.126（RNG k-&epsilon;）</dd>
+      </div>
+      <div>
+        <dt>格子の影響 / モデル間の幅</dt>
+        <dd>0.0008 / 0.0934</dd>
+      </div>
+    </dl>
+    <ul class="tags">
+      <li>OpenFOAM v2606 / simpleFoam</li>
+      <li>406,322 セル（格子収束 1,404,312）</li>
+      <li>乱流モデル 8 種</li>
+      <li>Re = 24,000</li>
+      <li>歩行者高さ 65 点</li>
+    </ul>
+  </div>
+</article>
+
+<article class="entry">
+  <dl class="meta">
+    <div>
+      <dt>対象</dt>
       <dd>通風（等温）<br>外部風・開口流れ</dd>
     </div>
     <div>
