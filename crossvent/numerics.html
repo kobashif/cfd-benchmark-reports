@@ -1,87 +1,99 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>数値設定が通風解析に与える影響</title>
-<meta name="description" content="同一格子で乱流モデルと対流項の離散化だけを変えた比較。通風量の差は 3.7% だが屋根の剥離泡が消滅する。">
-<meta property="og:type" content="article">
-<meta property="og:title" content="数値設定が通風解析に与える影響">
-<meta property="og:description" content="同一格子で乱流モデルと対流項の離散化だけを変えた比較。通風量の差は 3.7% だが屋根の剥離泡が消滅する。">
-<meta name="twitter:card" content="summary">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>数値設定が通風解析に与える影響 — CFD-VENT-002 版 1.1</title>
 <style>
-:root{--ground:#F4F7F8;--surface:#FFFFFF;--sunk:#EDF1F3;--ink:#16202A;
---muted:#5A6B78;--faint:#8496A3;--border:#DBE3E8;--strong:#B9C7D0;
---accent:#1D5E8C;--signal:#C1440E;--good:#0F6E56;--good-bg:#E2F0EB;
---warn:#A8620A;--warn-bg:#F8EEDF;--bad:#9B2226;--bad-bg:#F7E6E6;
---serif:"Hiragino Mincho ProN","Yu Mincho",YuMincho,"MS PMincho",serif;
---sans:"Hiragino Sans","Yu Gothic",YuGothic,Meiryo,system-ui,sans-serif;
---mono:ui-monospace,SFMono-Regular,Consolas,monospace;}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
---ground:#10161B;--surface:#171F26;--sunk:#1D262E;--ink:#E3EAEF;
---muted:#93A3AE;--faint:#71828E;--border:#27333C;--strong:#3B4B57;
---accent:#77ADD8;--signal:#E48055;--good:#55B896;--good-bg:#142C26;
---warn:#D69F55;--warn-bg:#2E2418;--bad:#E08585;--bad-bg:#2E1A1A;}}
-:root[data-theme="dark"]{--ground:#10161B;--surface:#171F26;--sunk:#1D262E;
---ink:#E3EAEF;--muted:#93A3AE;--faint:#71828E;--border:#27333C;--strong:#3B4B57;
---accent:#77ADD8;--signal:#E48055;--good:#55B896;--good-bg:#142C26;
---warn:#D69F55;--warn-bg:#2E2418;--bad:#E08585;--bad-bg:#2E1A1A;}
+:root{--ground:#EEF1F4;--paper:#FFFFFF;--sunk:#F2F5F7;--ink:#14202B;
+--muted:#55697A;--faint:#8496A3;--rule:#C9D4DC;--rule2:#8FA3B0;
+--accent:#14406B;--good:#0E6B52;--warn:#9A5B06;--bad:#95261C;
+--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 *{box-sizing:border-box}
-body{background:var(--ground);color:var(--ink);font-family:var(--sans);
-font-size:15px;line-height:1.85;margin:0;padding:0 20px 96px}
-.wrap{max-width:920px;margin:0 auto;display:grid;gap:44px}
-header{padding-top:60px;display:grid;gap:13px}
-.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;
-text-transform:uppercase;color:var(--faint)}
-h1{font-family:var(--serif);font-weight:600;font-size:33px;line-height:1.35;
-margin:0;text-wrap:balance}
-.sub{color:var(--muted);margin:0;max-width:64ch}
-.meta{display:flex;flex-wrap:wrap;gap:6px 20px;font-family:var(--mono);
-font-size:12.5px;color:var(--faint);border-top:1px solid var(--border);
-padding-top:14px}
-section{display:grid;gap:17px}
-h2{font-family:var(--serif);font-weight:600;font-size:21px;margin:0;
-display:flex;align-items:baseline;gap:12px}
-h2::after{content:"";flex:1;height:1px;background:var(--border)}
-h3{font-family:var(--serif);font-weight:600;font-size:17px;margin:6px 0 0}
-p{margin:0;max-width:72ch}
-.scroller{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table{border-collapse:collapse;width:100%;min-width:520px;font-size:13.5px}
-caption{caption-side:top;text-align:left;color:var(--faint);font-size:12.5px;
-padding-bottom:7px}
-th,td{border-bottom:1px solid var(--border);padding:7px 11px;text-align:left;
+body{margin:0;background:var(--ground);color:var(--ink);font-size:15px;
+line-height:1.85;font-family:-apple-system,BlinkMacSystemFont,
+"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+font-feature-settings:"palt"}
+.sheet{max-width:960px;margin:0 auto;background:var(--paper);
+padding:52px 62px 84px;box-shadow:0 1px 3px rgba(20,32,43,.10)}
+.cover{border-bottom:3px double var(--rule2);padding-bottom:30px;margin-bottom:8px}
+.cover .kind{font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;
+color:var(--accent);margin-bottom:10px}
+.cover .vol{font-size:13px;color:var(--muted);margin-bottom:16px;
+font-weight:600;letter-spacing:.04em}
+.cover h1{font-size:27px;line-height:1.45;margin:0 0 6px;font-weight:700}
+.cover .sub{font-size:16.5px;color:var(--muted);margin:0 0 26px}
+.cover dl{display:grid;grid-template-columns:8.5em 1fr;gap:3px 16px;
+font-size:13.5px;margin:0}
+.cover dt{color:var(--faint)}
+.cover dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.series{font-size:13px;color:var(--muted);border:1px solid var(--rule);
+background:var(--sunk);padding:10px 16px;margin:18px 0 0}
+.series a{color:var(--accent)}
+h2{font-size:19px;margin:44px 0 12px;padding:10px 0 8px;
+border-top:2px solid var(--rule2);border-bottom:1px solid var(--rule)}
+h3{font-size:15.5px;margin:26px 0 8px;color:var(--accent)}
+h4{font-size:14px;margin:18px 0 6px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:1.5em}
+li{margin:0 0 4px}
+nav.toc{background:var(--sunk);border:1px solid var(--rule);padding:18px 26px;
+margin:26px 0 8px;font-size:14px}
+nav.toc h2{border:none;margin:0 0 8px;padding:0;font-size:15px}
+nav.toc ol{list-style:none;padding:0;margin:0;columns:2;column-gap:34px}
+nav.toc li{margin:0 0 3px;break-inside:avoid}
+nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--rule2)}
+nav.toc a:hover{color:var(--accent)}
+.scroller{overflow-x:auto;margin:6px 0 4px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--paper)}
+th,td{border:1px solid var(--rule);padding:7px 10px;text-align:left;
 vertical-align:top}
-thead th{border-bottom:1.5px solid var(--strong);font-weight:600;
-color:var(--muted);font-size:12.5px;white-space:nowrap}
-td.num,th.num{text-align:right;font-family:var(--mono);white-space:nowrap}
-td.hi{color:var(--signal);font-weight:600}
-td.ok{color:var(--good);font-weight:600}
-tr.sub td{color:var(--muted)}
-.finding{background:var(--good-bg);border:1px solid var(--border);
-border-left:3px solid var(--good);padding:17px 21px;display:grid;gap:10px}
-.caution{background:var(--warn-bg);border:1px solid var(--border);
-border-left:3px solid var(--warn);padding:17px 21px;display:grid;gap:10px}
-.alarm{background:var(--bad-bg);border:1px solid var(--border);
-border-left:3px solid var(--bad);padding:17px 21px;display:grid;gap:10px}
-figure{margin:0;background:var(--surface);border:1px solid var(--border);
-border-radius:4px;padding:14px;display:grid;gap:11px}
-figure img{width:100%;display:block;border-radius:3px}
-figcaption{color:var(--muted);font-size:13px;max-width:74ch}
-ul,ol{margin:0;padding-left:1.2em;display:grid;gap:7px;max-width:72ch}
-li::marker{color:var(--faint)}
-code{font-family:var(--mono);font-size:.92em;background:var(--sunk);
-padding:1px 5px;border-radius:3px}
-footer{border-top:1px solid var(--border);padding-top:16px;font-size:12.5px;
-color:var(--faint);display:grid;gap:5px}
-@media(max-width:620px){h1{font-size:26px}body{font-size:14.5px}}
-
-.sitenav{max-width:920px;margin:0 auto;padding:18px 0 0;display:flex;
-flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
-.sitenav a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent}
-.sitenav a:hover{border-bottom-color:var(--accent)}
+th{background:var(--sunk);font-weight:600;font-size:12.5px;color:var(--muted)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+tbody tr:nth-child(even){background:#FAFCFD}
+caption{caption-side:top;text-align:left;font-size:13px;color:var(--muted);
+padding:10px 0 5px;font-weight:600}
+.capnote{font-size:12.5px;color:var(--faint);margin:3px 0 20px;line-height:1.7}
+figure{margin:16px 0 22px}
+img,video{max-width:100%;height:auto;border:1px solid var(--rule);
+background:var(--paper)}
+figcaption{font-size:13px;color:var(--muted);font-weight:600;margin-top:8px}
+figcaption .n{color:var(--accent)}
+.note{border:1px solid var(--rule);border-left:4px solid var(--accent);
+background:var(--sunk);padding:13px 17px;margin:16px 0;font-size:14px}
+.note.good{border-left-color:var(--good)}
+.note.warn{border-left-color:var(--warn)}
+.note.bad{border-left-color:var(--bad)}
+.note h4{margin:0 0 6px;font-size:14px}
+.note p:last-child{margin-bottom:0}
+span.good{color:var(--good);font-weight:600}
+span.warn{color:var(--warn);font-weight:600}
+span.bad{color:var(--bad);font-weight:600}
+code{font-family:var(--mono);font-size:.9em;background:var(--sunk);
+padding:1px 4px;border-radius:2px}
+.refs{font-size:13.5px}
+.refs li{margin-bottom:7px}
+.sig{margin-top:44px;border-top:1px solid var(--rule);padding-top:14px;
+font-size:12.5px;color:var(--faint);font-family:var(--mono)}
+@media print{body{background:#fff}.sheet{box-shadow:none;max-width:none;padding:0}
+h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
+@media(max-width:760px){.sheet{padding:30px 20px 60px}nav.toc ol{columns:1}
+.cover h1{font-size:22px}}
 </style>
 </head>
 <body>
+<div class="sheet">
+<div class="cover">
+<div class="kind">数値流体解析 報告書 / CFD ANALYSIS REPORT</div>
+<div class="vol">第2編</div>
+<h1>数値設定が通風解析に与える影響</h1>
+<p class="sub">乱流モデルと対流項の離散化による差の分離</p>
+<dl><dt>文書番号</dt><dd>CFD-VENT-002</dd><dt>版数</dt><dd>1.1</dd><dt>発行日</dt><dd>2026-08-24</dd><dt>解析コード</dt><dd>OpenFOAM v2606 (ESI) / simpleFoam</dd><dt>照合データ</dt><dd>風洞実験（空気調和・衛生工学会 CFD ガイドブック 4.5 節）</dd><dt>対象</dt><dd>通風（等温）、風向 0&deg; / 22.5&deg; / 45&deg; / 67.5&deg;</dd></dl>
+<div class="series"><b>本報告書はシリーズの一編です。</b> <a href="index.html">第0編 通風ベンチマークの CFD 検証</a> ／ <a href="grid-convergence.html">第1編 通風ベンチマークの CFD 検証</a> ／ <a href="videos.html">第3編 流れ場の動画</a></div>
+</div>
+<div class="scroller"><table><caption>表 1　改訂履歴</caption><thead><tr><th>版</th><th>日付</th><th>改訂内容</th></tr></thead><tbody><tr><td class="num">0.9</td><td>&mdash;</td><td>初版。図 4.5.10 からの実験値の読み取りに誤りがあり<b>破棄</b></td></tr><tr><td class="num">1.0</td><td class="num">2026-08-23</td><td>実験値を読み直して全編を訂正。訂正の経緯は本文に残している</td></tr><tr><td class="num">1.1</td><td class="num">2026-08-24</td><td>受託解析報告書の体裁に統一（表紙・改訂履歴・目次・図表一覧・適用範囲・奥付を追加）。<b>数値および本文の記述は変更していない</b></td></tr></tbody></table></div>
+<nav class="toc"><h2>目次</h2><ol><li><a href="#s__0">要旨</a></li><li><a href="#s1">1. 比較の設計</a></li><li><a href="#s2">2. 計算コストと収束</a></li><li><a href="#s3">3. 通風量と開口部</a></li><li><a href="#s4">4. 流れ場の構造 — 決定的な差</a></li><li><a href="#s5">5. 全圧の推移 — 損失がどこで生じるか</a></li><li><a href="#s6">6. 実務への含意</a></li><li><a href="#s7">7. 2 × 2 による分離</a></li><li><a href="#s8">8. 適用範囲および留意事項</a></li><li><a href="#s9">9. 資料の取り扱い</a></li><li><a href="#s__">付録　図表一覧</a></li></ol></nav>
+
 <nav class="sitenav">
 <a href="./">概要</a>
 <a href="grid-convergence.html">格子収束検証</a>
@@ -92,9 +104,9 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
 
 <div class="wrap">
 
-<header>
-  <div class="eyebrow">crossvent 0° — numerical settings comparison</div>
-  <h1>数値設定が通風解析に与える影響</h1>
+
+  
+  
   <p class="sub">同一格子・同一境界条件のもとで、乱流モデルと対流項の離散化だけを
   変えた 4 ケース（2 × 2）を比較する。通風量の差は 3.7% にとどまったが、
   流れ場の構造には決定的な違いが生じた。
@@ -103,10 +115,12 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
   <div class="meta"><span>OpenFOAM v2606 / simpleFoam</span>
   <span>560,500 セル</span><span>風向 0°</span>
   <span>U<sub>H</sub> = 7 m/s, H = 0.15 m</span><span>Re = 70,000</span></div>
-</header>
+
 
 <section>
-  <h2>要旨</h2>
+  
+<h2 id="s__0">要旨</h2>
+
   <div class="alarm">
     <p>
       標準 k-ε + 1 次風上に替えると、<strong>屋根面の剥離泡が完全に消滅した</strong>。
@@ -132,14 +146,16 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
 </section>
 
 <section>
-  <h2>1. 比較の設計</h2>
+  
+<h2 id="s1">1. 比較の設計</h2>
+
   <p>
     格子（560,500 セル）、境界条件、流入プロファイル（鉛直 52 点の実測値）、
     開口の実装（<code>createBaffles</code> による厚さゼロ壁、24 × 12 = 288 面）は
     完全に同一である。変えたのは次の 3 点のみ。
   </p>
   <div class="scroller">
-    <table>
+    <table><caption>表 2　比較の設計。格子・境界条件・開口の実装は同一にし、変えたのは 3 点のみ</caption>
       <thead><tr><th>項目</th><th>ケース A</th><th>ケース B</th></tr></thead>
       <tbody>
         <tr><td>乱流モデル</td><td>k-ω SST</td><td>標準 k-ε（高 Re 型）</td></tr>
@@ -165,7 +181,7 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
     なお SIMPLE と SIMPLEC は収束解を変えないので、精度の比較では交絡しない。
   </p>
   <div class="scroller">
-    <table>
+    <table><caption>表 3　2 &times; 2 の 4 ケースと、それぞれの反復数および収束の達成状況</caption>
       <thead><tr><th>ケース</th><th>乱流モデル</th><th>対流項</th>
       <th class="num">反復数</th><th class="num">収束</th></tr></thead>
       <tbody>
@@ -189,9 +205,11 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
 </section>
 
 <section>
-  <h2>2. 計算コストと収束</h2>
+  
+<h2 id="s2">2. 計算コストと収束</h2>
+
   <div class="scroller">
-    <table>
+    <table><caption>表 4　計算コストの比較。反復数・計算時間・1 反復あたりの秒数</caption>
       <thead><tr><th>量</th><th class="num">A　SST / QUICK / SIMPLE</th>
       <th class="num">B　k-ε / 1次風上 / SIMPLEC</th><th class="num">比</th></tr></thead>
       <tbody>
@@ -223,10 +241,12 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
 </section>
 
 <section>
-  <h2>3. 通風量と開口部</h2>
+  
+<h2 id="s3">3. 通風量と開口部</h2>
+
   <div class="scroller">
     <table>
-      <caption>C<sub>p</sub> の基準静圧は各ケースの建物直上・天井の下（z/H = 3.0〜4.5）に取った。ΔC<sub>p</sub> と α は圧力差なので基準に依存しない。</caption>
+      <caption>表 5　C p の基準静圧は各ケースの建物直上・天井の下（z/H = 3.0〜4.5）に取った。ΔC p と α は圧力差なので基準に依存しない。</caption>
       <thead><tr><th>量</th><th class="num">A</th><th class="num">B</th>
       <th class="num">変化</th></tr></thead>
       <tbody>
@@ -275,10 +295,12 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
 </section>
 
 <section>
-  <h2>4. 流れ場の構造 — 決定的な差</h2>
+  
+<h2 id="s4">4. 流れ場の構造 — 決定的な差</h2>
+
   <div class="scroller">
     <table>
-      <caption>y/H = 0 断面における逆流域（U<sub>x</sub> &lt; 0）。同一の判定基準・同一の解像度で抽出した。</caption>
+      <caption>表 6　y/H = 0 断面における逆流域（U x &lt; 0）。同一の判定基準・同一の解像度で抽出した。</caption>
       <thead><tr><th>構造</th><th>ケース</th><th class="num">x/H 範囲</th>
       <th class="num">高さ z/H</th><th class="num">最大逆流 /U<sub>H</sub></th>
       <th class="num">逆流セル数</th></tr></thead>
@@ -331,7 +353,7 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
   <figure>
     <img src="assets/yaw00_xz.png" alt="A の鉛直断面">
     <img src="assets/yaw00_fd_xz.png" alt="B の鉛直断面">
-    <figcaption><strong>図 1</strong>　y/H = 0 鉛直断面（開口軸）。上が A（k-ω SST / QUICK）、
+    <figcaption><span class="n">図 1</span>　y/H = 0 鉛直断面（開口軸）。上が A（k-ω SST / QUICK）、
     下が B（標準 k-ε / 1 次風上）。塗り分けは風圧係数 C<sub>p</sub>（共通スケール、0 を白）、
     流線の色は風速 |U|/U<sub>H</sub>。橙の太線が開口部。
     A では屋根前縁の剥離と建物前面の逆流域が明瞭だが、B では屋根上の流れが
@@ -340,7 +362,7 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
   <figure>
     <img src="assets/yaw00_xy.png" alt="A の水平断面">
     <img src="assets/yaw00_fd_xy.png" alt="B の水平断面">
-    <figcaption><strong>図 2</strong>　z/H = 0.5 水平断面（開口中心高さ）。上が A、下が B。
+    <figcaption><span class="n">図 2</span>　z/H = 0.5 水平断面（開口中心高さ）。上が A、下が B。
     後流の一対の渦は両者で保たれるが、B では建物側面のせん断層が厚くなり、
     後流の幅も広がる。1 次風上差分によるせん断層の数値的な塗りつぶしが見える。</figcaption>
   </figure>
@@ -388,10 +410,12 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
 </section>
 
 <section>
-  <h2>5. 全圧の推移 — 損失がどこで生じるか</h2>
+  
+<h2 id="s5">5. 全圧の推移 — 損失がどこで生じるか</h2>
+
   <div class="scroller">
     <table>
-      <caption>中心線 (y = 0, z/H = 0.5) に沿った全圧 C<sub>pt</sub> = (p − p<sub>ref</sub> + |U|²/2)/(U<sub>H</sub>²/2)。</caption>
+      <caption>表 7　中心線 (y = 0, z/H = 0.5) に沿った全圧 C pt = (p − p ref + |U|²/2)/(U H ²/2)。</caption>
       <thead><tr><th class="num">x/H</th><th class="num">A: C<sub>pt</sub></th>
       <th class="num">B: C<sub>pt</sub></th><th class="num">差</th>
       <th>位置</th></tr></thead>
@@ -435,7 +459,9 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
 </section>
 
 <section>
-  <h2>6. 実務への含意</h2>
+  
+<h2 id="s6">6. 実務への含意</h2>
+
   <ol>
     <li>
       <strong>収束の速さと精度は別物である。</strong>
@@ -474,7 +500,9 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
 </section>
 
 <section>
-  <h2>7. 2 × 2 による分離</h2>
+  
+<h2 id="s7">7. 2 × 2 による分離</h2>
+
   <p>
     残る 2 つの組み合わせ、C（標準 k-ε + QUICK）と D（k-ω SST + 1 次風上）を
     同一格子・同一境界条件で計算し、乱流モデルと離散化の寄与を分離した。
@@ -483,7 +511,7 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
   <h3>通風量は乱流モデルがほぼ単独で決めている</h3>
   <div class="scroller">
     <table>
-      <caption>Q/(U<sub>H</sub>H²)。風向 0°。風洞実験は 0.0428。</caption>
+      <caption>表 8　Q/(U H H²)。風向 0°。風洞実験は 0.0428。</caption>
       <thead><tr><th></th><th class="num">QUICK</th><th class="num">1 次風上</th>
       <th class="num">スキームの効果</th></tr></thead>
       <tbody>
@@ -498,7 +526,7 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
   </div>
   <div class="scroller">
     <table>
-      <caption>風上開口の流量係数 α と開口面の風圧係数差 ΔC<sub>p</sub>。</caption>
+      <caption>表 9　風上開口の流量係数 α と開口面の風圧係数差 ΔC p 。</caption>
       <thead><tr><th>量</th><th class="num">A<br>SST/QUICK</th><th class="num">D<br>SST/風上</th>
       <th class="num">C<br>k-ε/QUICK</th><th class="num">B<br>k-ε/風上</th></tr></thead>
       <tbody>
@@ -524,7 +552,7 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
   <h3>しかし剥離構造は両方が壊す</h3>
   <div class="scroller">
     <table>
-      <caption>y/H = 0 断面の逆流域（U<sub>x</sub> &lt; 0）のセル数。括弧内は再付着位置 x/H。</caption>
+      <caption>表 10　y/H = 0 断面の逆流域（U x &lt; 0）のセル数。括弧内は再付着位置 x/H。</caption>
       <thead><tr><th>構造</th><th class="num">QUICK</th><th class="num">1 次風上</th>
       <th class="num">スキームの効果</th></tr></thead>
       <tbody>
@@ -603,5 +631,16 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
 
 </div>
 
+
+<h2 id="s8">8. 適用範囲および留意事項</h2>
+<div class="scroller"><table><caption>表 11　適用範囲</caption><thead><tr><th>項目</th><th>本報告の範囲</th><th>範囲外</th></tr></thead><tbody><tr><td>形状</td><td>立方体状の単室、開口 2 面（風上・風下）</td><td>複数室・複雑形状・隣棟の影響は範囲外</td></tr><tr><td>流れ</td><td>等温</td><td>温度差による浮力を伴う通風は範囲外</td></tr><tr><td>風向</td><td>0&deg; / 22.5&deg; / 45&deg; / 67.5&deg;</td><td>他の風向は内挿していない</td></tr><tr><td>乱流モデル</td><td>k-&omega; SST および標準 k-&epsilon;</td><td>LES / DES は実施していない</td></tr><tr><td>照合量</td><td>通風量および開口の流量係数</td><td>室内の空気齢・汚染質濃度は範囲外</td></tr></tbody></table></div>
+<div class="note warn"><h4>本報告が保証しないこと</h4><p>上表の範囲外について、本報告の誤差の大きさをそのまま当てはめることはできない。本報告は<b>解析手法の妥当性</b>を示すもので、特定の建物の通風性能が要求を満たすか否かを判定するものではない。</p></div>
+<h2 id="s9">9. 資料の取り扱い</h2>
+<p><b>第三者資料は再配布しない。出典は必ず記載する。</b></p><ul><li>空気調和・衛生工学会『はじめての環境・設備設計シミュレーション CFD ガイドブック』4.5 節の図表そのものは<b>転載しない</b>。節・図番号を明示して引用し、本報告に載せるのは図から読み取った数値のみ。</li><li>読み取った実験値は <code>data/fig4_5_10_experiment.csv</code> に根拠つきで残している。読み取り誤差は &plusmn;0.002 と申告している。</li><li>計算に用いた設定・格子・後処理はすべて本報告に記載しており、第三者が再現できる形にしてある。</li></ul>
+<h2 id="s__">付録　図表一覧</h2>
+<p><b>図</b></p><ol><li>y/H = 0 鉛直断面（開口軸）。上が A（k-ω SST / QUICK）、 下が B（標準 k-ε / 1 次風上）。塗り分けは風圧係数 C p （共通スケール、0 を白）、 流線の色は風速 |U|/U H 。橙の太線が開口部。 A では屋根前縁の剥離と建物前面の逆流域が明瞭だが、B では屋根上の流れが 付着したままで、前面の逆流も弱い。室内の循環構造も異なる。</li><li>z/H = 0.5 水平断面（開口中心高さ）。上が A、下が B。 後流の一対の渦は両者で保たれるが、B では建物側面のせん断層が厚くなり、 後流の幅も広がる。1 次風上差分によるせん断層の数値的な塗りつぶしが見える。</li><li>動画 1 鉛直断面（y/H = 0）。 上が A（k-ω SST / QUICK）、下が B（標準 k-ε / 1 次風上）。 A では屋根前縁で剥がれた粒子が屋根の上で逆走して渦を巻くが、 B では屋根面に沿ってそのまま流れ去る。 建物前面でも、A の粒子が上流へ押し戻されるのに対し B はほとんど戻らない。</li><li>動画 2 3D 流管。上が A、下が B。 橙が風上開口へ流入する空気の起源、水色が流出先。 B では流入噴流が室内でより遠くまで届き、散逸が室の後半まで続く （中心線の |U|/U H が x/H = −0.5 で A の 0.06 に対し B は 0.33）。</li></ol>
+<p><b>表</b></p><ol><li>改訂履歴</li><li>比較の設計。格子・境界条件・開口の実装は同一にし、変えたのは 3 点のみ</li><li>2 &times; 2 の 4 ケースと、それぞれの反復数および収束の達成状況</li><li>計算コストの比較。反復数・計算時間・1 反復あたりの秒数</li><li>C p の基準静圧は各ケースの建物直上・天井の下（z/H = 3.0〜4.5）に取った。ΔC p と α は圧力差なので基準に依存しない。</li><li>y/H = 0 断面における逆流域（U x &lt; 0）。同一の判定基準・同一の解像度で抽出した。</li><li>中心線 (y = 0, z/H = 0.5) に沿った全圧 C pt = (p − p ref + |U|²/2)/(U H ²/2)。</li><li>Q/(U H H²)。風向 0°。風洞実験は 0.0428。</li><li>風上開口の流量係数 α と開口面の風圧係数差 ΔC p 。</li><li>y/H = 0 断面の逆流域（U x &lt; 0）のセル数。括弧内は再付着位置 x/H。</li><li>適用範囲</li></ol>
+<div class="sig"><div>文書番号 CFD-VENT-002 ／ 版 1.1 ／ 発行 2026-08-24</div><div>OpenFOAM v2606 (ESI) / simpleFoam</div><div>本文および数値は版 1.0 から変更していない</div></div>
+</div>
 </body>
 </html>

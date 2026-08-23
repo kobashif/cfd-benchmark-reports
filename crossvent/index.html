@@ -1,80 +1,99 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>通風ベンチマークの CFD 検証</title>
-<meta name="description" content="空気調和・衛生工学会 CFDガイドブック 4.5節の通風ベンチマークを OpenFOAM で解き、格子収束・反復収束・実験値との乖離の帰属を定量化した記録。">
-<meta property="og:type" content="website">
-<meta property="og:title" content="通風ベンチマークの CFD 検証">
-<meta property="og:description" content="OpenFOAM による通風ベンチマークの検証記録。格子収束、流量係数の分離、数値設定の影響。">
-<meta name="twitter:card" content="summary">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>通風ベンチマークの CFD 検証 — CFD-VENT-000 版 1.1</title>
 <style>
-:root{--ground:#F4F7F8;--surface:#FFFFFF;--sunk:#EDF1F3;--ink:#16202A;
---muted:#5A6B78;--faint:#8496A3;--border:#DBE3E8;--strong:#B9C7D0;
---accent:#1D5E8C;--signal:#C1440E;--good:#0F6E56;--good-bg:#E2F0EB;
---warn:#A8620A;--warn-bg:#F8EEDF;
---serif:"Hiragino Mincho ProN","Yu Mincho",YuMincho,"MS PMincho",serif;
---sans:"Hiragino Sans","Yu Gothic",YuGothic,Meiryo,system-ui,sans-serif;
---mono:ui-monospace,SFMono-Regular,Consolas,monospace;}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
---ground:#10161B;--surface:#171F26;--sunk:#1D262E;--ink:#E3EAEF;
---muted:#93A3AE;--faint:#71828E;--border:#27333C;--strong:#3B4B57;
---accent:#77ADD8;--signal:#E48055;--good:#55B896;--good-bg:#142C26;
---warn:#D69F55;--warn-bg:#2E2418;}}
-:root[data-theme="dark"]{--ground:#10161B;--surface:#171F26;--sunk:#1D262E;
---ink:#E3EAEF;--muted:#93A3AE;--faint:#71828E;--border:#27333C;--strong:#3B4B57;
---accent:#77ADD8;--signal:#E48055;--good:#55B896;--good-bg:#142C26;
---warn:#D69F55;--warn-bg:#2E2418;}
+:root{--ground:#EEF1F4;--paper:#FFFFFF;--sunk:#F2F5F7;--ink:#14202B;
+--muted:#55697A;--faint:#8496A3;--rule:#C9D4DC;--rule2:#8FA3B0;
+--accent:#14406B;--good:#0E6B52;--warn:#9A5B06;--bad:#95261C;
+--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 *{box-sizing:border-box}
-body{background:var(--ground);color:var(--ink);font-family:var(--sans);
-font-size:15px;line-height:1.85;margin:0;padding:0 20px 96px}
-.wrap{max-width:920px;margin:0 auto;display:grid;gap:44px}
-.sitenav{max-width:920px;margin:0 auto;padding:18px 0 0;display:flex;
-flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
-.sitenav a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent}
-.sitenav a:hover{border-bottom-color:var(--accent)}
-header{padding-top:52px;display:grid;gap:13px}
-.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;
-text-transform:uppercase;color:var(--faint)}
-h1{font-family:var(--serif);font-weight:600;font-size:33px;line-height:1.35;
-margin:0;text-wrap:balance}
-.sub{color:var(--muted);margin:0;max-width:64ch}
-.meta{display:flex;flex-wrap:wrap;gap:6px 20px;font-family:var(--mono);
-font-size:12.5px;color:var(--faint);border-top:1px solid var(--border);
-padding-top:14px}
-section{display:grid;gap:17px}
-h2{font-family:var(--serif);font-weight:600;font-size:21px;margin:0;
-display:flex;align-items:baseline;gap:12px}
-h2::after{content:"";flex:1;height:1px;background:var(--border)}
-p{margin:0;max-width:72ch}
-.cards{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:5px;
-padding:20px 22px;display:grid;gap:9px;align-content:start}
-.card h3{font-family:var(--serif);font-size:18px;margin:0}
-.card h3 a{color:var(--ink);text-decoration:none}
-.card h3 a:hover{color:var(--accent)}
-.card p{font-size:13.5px;color:var(--muted)}
-.card .tag{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
-.scroller{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table{border-collapse:collapse;width:100%;min-width:460px;font-size:13.5px}
-th,td{border-bottom:1px solid var(--border);padding:7px 11px;text-align:left}
-thead th{border-bottom:1.5px solid var(--strong);font-weight:600;
-color:var(--muted);font-size:12.5px;white-space:nowrap}
-td.num,th.num{text-align:right;font-family:var(--mono);white-space:nowrap}
-.note{background:var(--warn-bg);border:1px solid var(--border);
-border-left:3px solid var(--warn);padding:17px 21px;display:grid;gap:10px}
-ul{margin:0;padding-left:1.2em;display:grid;gap:7px;max-width:72ch}
-li::marker{color:var(--faint)}
-code{font-family:var(--mono);font-size:.92em;background:var(--sunk);
-padding:1px 5px;border-radius:3px}
-footer{border-top:1px solid var(--border);padding-top:16px;font-size:12.5px;
-color:var(--faint);display:grid;gap:5px;max-width:72ch}
-a{color:var(--accent)}
-@media(max-width:620px){h1{font-size:26px}body{font-size:14.5px}}
+body{margin:0;background:var(--ground);color:var(--ink);font-size:15px;
+line-height:1.85;font-family:-apple-system,BlinkMacSystemFont,
+"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+font-feature-settings:"palt"}
+.sheet{max-width:960px;margin:0 auto;background:var(--paper);
+padding:52px 62px 84px;box-shadow:0 1px 3px rgba(20,32,43,.10)}
+.cover{border-bottom:3px double var(--rule2);padding-bottom:30px;margin-bottom:8px}
+.cover .kind{font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;
+color:var(--accent);margin-bottom:10px}
+.cover .vol{font-size:13px;color:var(--muted);margin-bottom:16px;
+font-weight:600;letter-spacing:.04em}
+.cover h1{font-size:27px;line-height:1.45;margin:0 0 6px;font-weight:700}
+.cover .sub{font-size:16.5px;color:var(--muted);margin:0 0 26px}
+.cover dl{display:grid;grid-template-columns:8.5em 1fr;gap:3px 16px;
+font-size:13.5px;margin:0}
+.cover dt{color:var(--faint)}
+.cover dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.series{font-size:13px;color:var(--muted);border:1px solid var(--rule);
+background:var(--sunk);padding:10px 16px;margin:18px 0 0}
+.series a{color:var(--accent)}
+h2{font-size:19px;margin:44px 0 12px;padding:10px 0 8px;
+border-top:2px solid var(--rule2);border-bottom:1px solid var(--rule)}
+h3{font-size:15.5px;margin:26px 0 8px;color:var(--accent)}
+h4{font-size:14px;margin:18px 0 6px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:1.5em}
+li{margin:0 0 4px}
+nav.toc{background:var(--sunk);border:1px solid var(--rule);padding:18px 26px;
+margin:26px 0 8px;font-size:14px}
+nav.toc h2{border:none;margin:0 0 8px;padding:0;font-size:15px}
+nav.toc ol{list-style:none;padding:0;margin:0;columns:2;column-gap:34px}
+nav.toc li{margin:0 0 3px;break-inside:avoid}
+nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--rule2)}
+nav.toc a:hover{color:var(--accent)}
+.scroller{overflow-x:auto;margin:6px 0 4px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--paper)}
+th,td{border:1px solid var(--rule);padding:7px 10px;text-align:left;
+vertical-align:top}
+th{background:var(--sunk);font-weight:600;font-size:12.5px;color:var(--muted)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+tbody tr:nth-child(even){background:#FAFCFD}
+caption{caption-side:top;text-align:left;font-size:13px;color:var(--muted);
+padding:10px 0 5px;font-weight:600}
+.capnote{font-size:12.5px;color:var(--faint);margin:3px 0 20px;line-height:1.7}
+figure{margin:16px 0 22px}
+img,video{max-width:100%;height:auto;border:1px solid var(--rule);
+background:var(--paper)}
+figcaption{font-size:13px;color:var(--muted);font-weight:600;margin-top:8px}
+figcaption .n{color:var(--accent)}
+.note{border:1px solid var(--rule);border-left:4px solid var(--accent);
+background:var(--sunk);padding:13px 17px;margin:16px 0;font-size:14px}
+.note.good{border-left-color:var(--good)}
+.note.warn{border-left-color:var(--warn)}
+.note.bad{border-left-color:var(--bad)}
+.note h4{margin:0 0 6px;font-size:14px}
+.note p:last-child{margin-bottom:0}
+span.good{color:var(--good);font-weight:600}
+span.warn{color:var(--warn);font-weight:600}
+span.bad{color:var(--bad);font-weight:600}
+code{font-family:var(--mono);font-size:.9em;background:var(--sunk);
+padding:1px 4px;border-radius:2px}
+.refs{font-size:13.5px}
+.refs li{margin-bottom:7px}
+.sig{margin-top:44px;border-top:1px solid var(--rule);padding-top:14px;
+font-size:12.5px;color:var(--faint);font-family:var(--mono)}
+@media print{body{background:#fff}.sheet{box-shadow:none;max-width:none;padding:0}
+h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
+@media(max-width:760px){.sheet{padding:30px 20px 60px}nav.toc ol{columns:1}
+.cover h1{font-size:22px}}
 </style>
 </head>
 <body>
+<div class="sheet">
+<div class="cover">
+<div class="kind">数値流体解析 報告書 / CFD ANALYSIS REPORT</div>
+<div class="vol">第0編</div>
+<h1>通風ベンチマークの CFD 検証</h1>
+<p class="sub">本シリーズの要旨と読み方</p>
+<dl><dt>文書番号</dt><dd>CFD-VENT-000</dd><dt>版数</dt><dd>1.1</dd><dt>発行日</dt><dd>2026-08-24</dd><dt>解析コード</dt><dd>OpenFOAM v2606 (ESI) / simpleFoam</dd><dt>照合データ</dt><dd>風洞実験（空気調和・衛生工学会 CFD ガイドブック 4.5 節）</dd><dt>対象</dt><dd>通風（等温）、風向 0&deg; / 22.5&deg; / 45&deg; / 67.5&deg;</dd></dl>
+<div class="series"><b>本報告書はシリーズの一編です。</b> <a href="grid-convergence.html">第1編 通風ベンチマークの CFD 検証</a> ／ <a href="numerics.html">第2編 数値設定が通風解析に与える影響</a> ／ <a href="videos.html">第3編 流れ場の動画</a></div>
+</div>
+<div class="scroller"><table><caption>表 1　改訂履歴</caption><thead><tr><th>版</th><th>日付</th><th>改訂内容</th></tr></thead><tbody><tr><td class="num">0.9</td><td>&mdash;</td><td>初版。図 4.5.10 からの実験値の読み取りに誤りがあり<b>破棄</b></td></tr><tr><td class="num">1.0</td><td class="num">2026-08-23</td><td>実験値を読み直して全編を訂正。訂正の経緯は本文に残している</td></tr><tr><td class="num">1.1</td><td class="num">2026-08-24</td><td>受託解析報告書の体裁に統一（表紙・改訂履歴・目次・図表一覧・適用範囲・奥付を追加）。<b>数値および本文の記述は変更していない</b></td></tr></tbody></table></div>
+<nav class="toc"><h2>目次</h2><ol><li><a href="#s____0">レポート</a></li><li><a href="#s___2026_08_23_1">訂正（2026-08-23）</a></li><li><a href="#s____2">主な結果</a></li><li><a href="#s______3">流れ場の動画</a></li><li><a href="#s_________4">この検証の位置づけ</a></li><li><a href="#s___________5">適用範囲および留意事項</a></li><li><a href="#s_______6">資料の取り扱い</a></li><li><a href="#s__">付録　図表一覧</a></li></ol></nav>
+
 
 <nav class="sitenav">
 <a href="./">概要</a>
@@ -85,9 +104,9 @@ a{color:var(--accent)}
 
 <div class="wrap">
 
-<header>
-  <div class="eyebrow">OpenFOAM cross-ventilation benchmark</div>
-  <h1>通風ベンチマークの CFD 検証</h1>
+
+  
+  
   <p class="sub">空気調和・衛生工学会『はじめての環境・設備設計シミュレーション
   CFDガイドブック』4.5 節の通風ベンチマークを OpenFOAM で解き、
   <strong>その計算が妥当であることを確認した記録</strong>です。
@@ -97,10 +116,12 @@ a{color:var(--accent)}
   <div class="meta"><span>OpenFOAM v2606 / simpleFoam</span>
   <span>560,500 セル</span><span>風向 0° / 22.5° / 45° / 67.5°</span>
   <span>Re = 70,000</span></div>
-</header>
+
 
 <section>
-  <h2>レポート</h2>
+  
+<h2 id="s____0">レポート</h2>
+
   <div class="cards">
     <div class="card">
       <div class="tag">4 風向 / V&amp;V</div>
@@ -120,7 +141,9 @@ a{color:var(--accent)}
 </section>
 
 <section>
-  <h2>訂正（2026-08-23）</h2>
+  
+<h2 id="s___2026_08_23_1">訂正（2026-08-23）</h2>
+
   <div class="note">
     <p><strong>風洞実験値の読み取りを訂正した。</strong>
     22.5° に記載していた 0.0447 は、図 4.5.10 の実験曲線の最大値
@@ -142,9 +165,11 @@ a{color:var(--accent)}
     振れる。CFD の値そのもの（計算結果）は訂正していない。</p>
   </div>
 
-  <h2>主な結果</h2>
+  
+<h2 id="s____2">主な結果</h2>
+
   <div class="scroller">
-    <table>
+    <table><caption>表 2　4 風向の通風量。本解析・風洞実験・その差と、AIJ &sect;7.1 の反復収束の達成状況</caption>
       <thead><tr><th>風向</th><th class="num">本解析</th>
       <th class="num">風洞実験</th><th class="num">差</th>
       <th class="num">AIJ §7.1</th></tr></thead>
@@ -192,7 +217,9 @@ a{color:var(--accent)}
 </section>
 
 <section>
-  <h2>流れ場の動画</h2>
+  
+<h2 id="s______3">流れ場の動画</h2>
+
   <p>鉛直断面（y/H = 0）、水平断面（z/H = 0.5）、開口部を通る 3D 流管を
   4 風向ぶん、計 12 本公開しています。</p>
   <figure style="margin:0;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:14px;display:grid;gap:11px">
@@ -208,7 +235,9 @@ a{color:var(--accent)}
 </section>
 
 <section>
-  <h2>この検証の位置づけ</h2>
+  
+<h2 id="s_________4">この検証の位置づけ</h2>
+
   <div class="note">
     <p>
       <strong>本検証は進行中です。</strong>実験値との乖離を
@@ -238,6 +267,17 @@ a{color:var(--accent)}
   <div>格子収束指標は Roache (1994) および Celik et al. (2008) / ASME V&amp;V 20 に基づきます。</div>
 </footer>
 
+</div>
+
+<h2 id="s___________5">適用範囲および留意事項</h2>
+<div class="scroller"><table><caption>表 3　適用範囲</caption><thead><tr><th>項目</th><th>本報告の範囲</th><th>範囲外</th></tr></thead><tbody><tr><td>形状</td><td>立方体状の単室、開口 2 面（風上・風下）</td><td>複数室・複雑形状・隣棟の影響は範囲外</td></tr><tr><td>流れ</td><td>等温</td><td>温度差による浮力を伴う通風は範囲外</td></tr><tr><td>風向</td><td>0&deg; / 22.5&deg; / 45&deg; / 67.5&deg;</td><td>他の風向は内挿していない</td></tr><tr><td>乱流モデル</td><td>k-&omega; SST および標準 k-&epsilon;</td><td>LES / DES は実施していない</td></tr><tr><td>照合量</td><td>通風量および開口の流量係数</td><td>室内の空気齢・汚染質濃度は範囲外</td></tr></tbody></table></div>
+<div class="note warn"><h4>本報告が保証しないこと</h4><p>上表の範囲外について、本報告の誤差の大きさをそのまま当てはめることはできない。本報告は<b>解析手法の妥当性</b>を示すもので、特定の建物の通風性能が要求を満たすか否かを判定するものではない。</p></div>
+<h2 id="s_______6">資料の取り扱い</h2>
+<p><b>第三者資料は再配布しない。出典は必ず記載する。</b></p><ul><li>空気調和・衛生工学会『はじめての環境・設備設計シミュレーション CFD ガイドブック』4.5 節の図表そのものは<b>転載しない</b>。節・図番号を明示して引用し、本報告に載せるのは図から読み取った数値のみ。</li><li>読み取った実験値は <code>data/fig4_5_10_experiment.csv</code> に根拠つきで残している。読み取り誤差は &plusmn;0.002 と申告している。</li><li>計算に用いた設定・格子・後処理はすべて本報告に記載しており、第三者が再現できる形にしてある。</li></ul>
+<h2 id="s__">付録　図表一覧</h2>
+<p><b>図</b></p><ol><li>風向 0° の 3D 流管。橙が風上開口へ流入する空気の起源、 水色が風下開口から流出する空気の行き先。</li></ol>
+<p><b>表</b></p><ol><li>改訂履歴</li><li>4 風向の通風量。本解析・風洞実験・その差と、AIJ &sect;7.1 の反復収束の達成状況</li><li>適用範囲</li></ol>
+<div class="sig"><div>文書番号 CFD-VENT-000 ／ 版 1.1 ／ 発行 2026-08-24</div><div>OpenFOAM v2606 (ESI) / simpleFoam</div><div>本文および数値は版 1.0 から変更していない</div></div>
 </div>
 </body>
 </html>
