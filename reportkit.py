@@ -177,21 +177,35 @@ class Doc(object):
         self.a("<h3>%s %s</h3>" % (numstr, title))
 
     # ------------------------------------------------------------ 図表 --
-    def fig(self, name, caption, note=None, maxw=940):
+    # *_html は文字列を返すだけで本文に足さない。既存の生成器が
+    # A(png(...)) の形で書かれている場合に、呼び出し側を変えずに
+    # 通し番号だけ入れられるようにするためのもの。
+    def fig_html(self, name, caption, note=None, maxw=940):
         self.nfig += 1
         self.figs.append((self.nfig, caption))
         p = os.path.join(self.rep, name)
         if not os.path.exists(p):
-            self.a('<p class="capnote">（図 %d　%s — 画像 %s が未生成）</p>'
-                   % (self.nfig, caption, name))
-            return
+            return ('<p class="capnote">（図 %d　%s — 画像 %s が未生成）</p>'
+                    % (self.nfig, caption, name))
         b = base64.b64encode(open(p, "rb").read()).decode()
         kind = "svg+xml" if name.lower().endswith(".svg") else "png"
-        self.a('<figure><img src="data:image/%s;base64,%s" alt="%s" '
-               'style="width:100%%;max-width:%dpx">'
-               '<figcaption><span class="n">図 %d</span>　%s</figcaption>%s</figure>'
-               % (kind, b, caption, maxw, self.nfig, caption,
-                  '<p class="capnote">%s</p>' % note if note else ""))
+        return ('<figure><img src="data:image/%s;base64,%s" alt="%s" '
+                'style="width:100%%;max-width:%dpx">'
+                '<figcaption><span class="n">図 %d</span>　%s</figcaption>%s</figure>'
+                % (kind, b, caption, maxw, self.nfig, caption,
+                   '<p class="capnote">%s</p>' % note if note else ""))
+
+    def svg_html(self, markup, caption, note=None, maxw=940):
+        """既に SVG の文字列を持っている場合（ファイルを読まない）。"""
+        self.nfig += 1
+        self.figs.append((self.nfig, caption))
+        return ('<figure><div style="max-width:%dpx">%s</div>'
+                '<figcaption><span class="n">図 %d</span>　%s</figcaption>%s</figure>'
+                % (maxw, markup, self.nfig, caption,
+                   '<p class="capnote">%s</p>' % note if note else ""))
+
+    def fig(self, name, caption, note=None, maxw=940):
+        self.a(self.fig_html(name, caption, note, maxw))
 
     def video(self, src, caption, note=None, maxw=940):
         self.nvid += 1
@@ -201,7 +215,7 @@ class Doc(object):
                % (maxw, src, self.nvid, caption,
                   '<p class="capnote">%s</p>' % note if note else ""))
 
-    def tbl(self, caption, head, rows, note=None):
+    def tbl_html(self, caption, head, rows, note=None):
         self.ntbl += 1
         self.tbls.append((self.ntbl, caption))
         h = "".join("<th>%s</th>" % c for c in head)
@@ -213,11 +227,13 @@ class Doc(object):
                 isnum = re.fullmatch(r"[-+0-9.,%\s×^<>=eE−:/]*|—", c)
                 tds += ('<td class="num">%s</td>' if isnum else "<td>%s</td>") % c
             body += "<tr>%s</tr>" % tds
-        self.a('<div class="scroller"><table><caption>表 %d　%s</caption>'
-               "<thead><tr>%s</tr></thead><tbody>%s</tbody></table></div>"
-               % (self.ntbl, caption, h, body))
-        if note:
-            self.a('<p class="capnote">%s</p>' % note)
+        return ('<div class="scroller"><table><caption>表 %d　%s</caption>'
+                "<thead><tr>%s</tr></thead><tbody>%s</tbody></table></div>%s"
+                % (self.ntbl, caption, h, body,
+                   '<p class="capnote">%s</p>' % note if note else ""))
+
+    def tbl(self, caption, head, rows, note=None):
+        self.a(self.tbl_html(caption, head, rows, note))
 
     def note(self, heading, html, kind=""):
         self.a('<div class="note %s"><h4>%s</h4>%s</div>' % (kind, heading, html))
