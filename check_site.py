@@ -24,6 +24,9 @@ SITE = "https://kobashif.github.io/cfd-benchmark-reports/"
 
 # 生成元 -> 公開先。生成元が更新されたのに公開していない、を検出する。
 SOURCES = {
+    "aij-caseA/index.html": "/mnt/c/Users/DZH05/claude-5/report/index.html",
+    "aij-caseA/conditions_A.html":
+        "/mnt/c/Users/DZH05/claude-5/report/conditions_A.html",
     "annex20-2d/index.html": "/mnt/c/Users/DZH05/claude-3/report/index.html",
     "annex20-caseE/index.html": "/mnt/c/Users/DZH05/claude-4/report/index.html",
     "crossvent/index.html": "/mnt/c/Users/DZH05/claude-2/crossvent-benchmark/index.html",
