@@ -232,8 +232,8 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
       <tbody>
         <tr><td>Q/(U<sub>H</sub>H²)</td><td class="num">0.03665</td>
         <td class="num">0.03529</td><td class="num">−3.7%</td></tr>
-        <tr><td>風洞実験（0.0423）との差</td><td class="num">−13.4%</td>
-        <td class="num hi">−16.6%</td><td class="num">悪化</td></tr>
+        <tr><td>風洞実験（0.0428）との差</td><td class="num">−14.4%</td>
+        <td class="num hi">−17.5%</td><td class="num">悪化</td></tr>
         <tr class="sub"><td colspan="4">開口面の風圧係数</td></tr>
         <tr><td>C<sub>p</sub> 風上開口の外側</td><td class="num">0.6816</td>
         <td class="num">0.6980</td><td class="num">+0.016</td></tr>
@@ -321,9 +321,12 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
     この挙動は既知の欠陥そのものである。標準 k-ε は淀み点で乱流エネルギーの生成を
     過大評価し、渦粘性を過大にする。過大な渦粘性は剥離を抑え込む。
     1 次風上差分の数値拡散がこれに上乗せされる。
-    <strong>Flow Designer のリファレンスガイド自身が
-    「標準 k-ε は淀み点で乱流エネルギーを過大評価し、はく離予測を悪化させる」と
-    明記しており、本結果はその警告の定量的な裏づけになっている。</strong>
+    <strong>これは学会のガイドラインが繰り返し指摘している性質である。</strong>
+    日本風工学会『都市の風環境ガイドブック』7.4.2(1)② は、標準 k-ε の問題点として
+    「建物壁面などの剥離や逆流を正しく再現できない」「屋上面ほど顕著に過大生産を
+    生じ、地表面付近の風速分布に影響を及ぼす」と述べ、改良型 k-ε
+    （RNG k-ε、realizable k-ε）でこの問題点が改良されるとしている。
+    本結果はその記述の定量的な裏づけになっている。
   </p>
   <figure>
     <img src="assets/yaw00_xz.png" alt="A の鉛直断面">
@@ -480,7 +483,7 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
   <h3>通風量は乱流モデルがほぼ単独で決めている</h3>
   <div class="scroller">
     <table>
-      <caption>Q/(U<sub>H</sub>H²)。風向 0°。風洞実験は 0.0423。</caption>
+      <caption>Q/(U<sub>H</sub>H²)。風向 0°。風洞実験は 0.0428。</caption>
       <thead><tr><th></th><th class="num">QUICK</th><th class="num">1 次風上</th>
       <th class="num">スキームの効果</th></tr></thead>
       <tbody>
