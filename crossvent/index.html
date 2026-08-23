@@ -120,6 +120,28 @@ a{color:var(--accent)}
 </section>
 
 <section>
+  <h2>訂正（2026-08-23）</h2>
+  <div class="note">
+    <p><strong>風洞実験値の読み取りを訂正した。</strong>
+    22.5° に記載していた 0.0447 は、図 4.5.10 の実験曲線の最大値
+    （10° 付近、約 0.0437）を超えており、曲線上に存在し得ない値だった。
+    45° の 0.0408 も図から読める値と 0.0035 離れていた。
+    出典を辿れる形で残していなかったため、図から読み直して
+    <code>data/fig4_5_10_experiment.csv</code> に記録し、
+    本サイトの実験比をすべて再計算した。</p>
+    <p>0°: 0.0423 → 0.0428 ／ 22.5°: 0.0447 → 0.0424 ／
+    45°: 0.0408 → 0.0373 ／ 67.5°: 空欄 → 0.0345。
+    実験比は −13.4 / −17.8 / −28.4% から
+    <strong>−14.4 / −13.3 / −21.7 / −26.2%</strong> に変わった。</p>
+    <p><strong>結論は変わらない。</strong>
+    格子収束（GCI 1.5 〜 3.7%）も離散化スキームの寄与（0.1 〜 0.4%）も、
+    訂正後の乖離より 1 桁小さい。乖離を数値誤差で説明できないという判断、
+    および乖離が開口部ではなく建物まわりの圧力場に帰属するという判断は
+    そのまま成り立つ。</p>
+    <p>読み取り誤差は ±0.002 と見積もる。実験比に換算すると約 ±4 ポイント
+    振れる。CFD の値そのもの（計算結果）は訂正していない。</p>
+  </div>
+
   <h2>主な結果</h2>
   <div class="scroller">
     <table>
@@ -127,18 +149,21 @@ a{color:var(--accent)}
       <th class="num">風洞実験</th><th class="num">差</th>
       <th class="num">AIJ §7.1</th></tr></thead>
       <tbody>
-        <tr><td>0°</td><td class="num">0.03665</td><td class="num">0.0423</td>
-        <td class="num">−13.4%</td><td class="num">22 / 22</td></tr>
-        <tr><td>22.5°</td><td class="num">0.03674</td><td class="num">0.0447</td>
-        <td class="num">−17.8%</td><td class="num">21 / 22</td></tr>
-        <tr><td>45°</td><td class="num">0.02922</td><td class="num">0.0408</td>
-        <td class="num">−28.4%</td><td class="num">21 / 22</td></tr>
-        <tr><td>67.5°</td><td class="num">0.02549</td><td class="num">—</td>
-        <td class="num">—</td><td class="num">22 / 22</td></tr>
+        <tr><td>0°</td><td class="num">0.03665</td><td class="num">0.0428</td><td class="num">−14.4%</td><td class="num">22 / 22</td></tr>
+        <tr><td>22.5°</td><td class="num">0.03674</td><td class="num">0.0424</td><td class="num">−13.3%</td><td class="num">21 / 22</td></tr>
+        <tr><td>45°</td><td class="num">0.02922</td><td class="num">0.0373</td><td class="num">−21.7%</td><td class="num">21 / 22</td></tr>
+        <tr><td>67.5°</td><td class="num">0.02549</td><td class="num">0.0345</td><td class="num">−26.2%</td><td class="num">22 / 22</td></tr>
       </tbody>
     </table>
   </div>
-  <p>通風量は Q/(U<sub>H</sub>H²)。軒高 H = 0.15 m、軒高風速 U<sub>H</sub> = 7.0 m/s で無次元化。</p>
+  <p>通風量は Q/(U<sub>H</sub>H²)。軒高 H = 0.15 m、軒高風速 U<sub>H</sub> = 7.0 m/s で無次元化。
+    風洞実験値は書籍掲載図からの目視読み取りで、±0.0015 の読み取り誤差を含む。</p>
+  <p>実験値は図 4.5.10 の実験曲線から読み取り、
+    <code>data/fig4_5_10_experiment.csv</code> に記録した。
+    22.5° と 67.5° は曲線上の測点の間にあるため線形補間である。
+    <strong>読み取り誤差は ±0.002 と見積もる</strong>（縦軸目盛り 1 区間の 1/5）。
+    これは通風量の 5 % 前後にあたり、実験比に換算すると約 ±4 ポイント振れる。
+    乱流モデル間の差と同程度の大きさであることに留意されたい。</p>
   <ul>
     <li>室内静圧を直接測って開口の流量係数を分離した結果、
     <strong>風下開口の α は 4 風向とも 0.65 ± 0.015</strong> と薄板オリフィスの

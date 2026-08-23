@@ -147,7 +147,7 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
       スケールした<strong>幾何相似な格子族</strong>（560,500 / 174,048 / 66,528 セル、
       細分比 1.48 / 1.38）を作り直したところ、<strong>見かけの次数は 1.607</strong> となり
       単調収束が得られた。<strong>残存する格子依存性は GCI で 1.5 〜 3.7%</strong> である。
-      実験との乖離 −13.4% とは明確に桁が異なり、
+      実験との乖離 −14.4% とは明確に桁が異なり、
       <strong>乖離を格子解像度で説明することはできないと確定した</strong>。
     </p>
     <p>
@@ -174,7 +174,7 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
       標準 k-ε・1 次風上・SIMPLEC（市販ソフト Flow Designer の既定設定に相当）で解き直した。
       ΔC<sub>p</sub> は予想に反して 6.4% <em>増加</em>した一方、風上開口の α が
       0.822 から 0.695 へ低下し、正味では通風量が 3.7% 減って実験との差は
-      −13.4% から −16.6% へ広がった。
+      −14.4% から −17.5% へ広がった。
       <strong>ΔC<sub>p</sub> と α は独立に調整できず、乱流モデルの変更は両者を逆向きに動かす。</strong>
       なお比較ケースは 2,771 反復で残差 10⁻⁸ まで収束しており、
       本解析の設定（20,000 反復で residualControl 未達）より 7 倍速い。
@@ -333,12 +333,36 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
         <th class="num">代表長さ比 h ∝ N<sup>−1/3</sup></th><th class="num">δ の比</th></tr>
       </thead>
       <tbody>
-        <tr><td>A（粗）</td><td class="num">167,040</td><td class="num">H/10</td><td class="num">—</td><td class="num">—</td></tr>
+        <tr><td>A（粗）— 書籍の指定分割に相当</td><td class="num">167,040</td><td class="num">H/10</td><td class="num">—</td><td class="num">—</td></tr>
         <tr><td>B（中）— 既往解</td><td class="num">242,424</td><td class="num">H/30</td><td class="num">1.132</td><td class="num">3.00</td></tr>
         <tr class="sub"><td>C（細）— 本検証</td><td class="num">560,500</td><td class="num">H/60</td><td class="num">1.322</td><td class="num">2.00</td></tr>
       </tbody>
     </table>
   </div>
+  <p>
+    <strong>書籍が指定する格子と、本検証が用いた格子は異なる。</strong>
+    書籍 4.5 節は分割を 58 × 48 × 60 と指定しており、これは
+    <strong>167,040 セル</strong>、すなわち上表の格子 A に一致する。
+    本検証の主たる結果は格子 C（560,500 セル）で得たものである。
+  </p>
+  <p>
+    指定分割から外した理由は、建物まわりが一様 δ = H/10 のままでは
+    屋根端・鉛直コーナーの剥離と開口の縁を解像できず、計算が破綻したためである。
+    <code>fieldMinMax</code> による実測では、0° の t &gt; 2000 における
+    18,000 反復のうち <strong>14.4 %</strong> で |U|<sub>max</sub> &gt; 12 m/s が
+    発生し、最大値は <strong>5,382 m/s</strong>（軒高風速 U<sub>H</sub> の 769 倍）に
+    達した。発生位置は開口の縁と風下側コーナーに集中していた。
+    これが通風量のバースト、実行間再現性の悪さ（0° で 3.3 %）、および
+    0° の延長計算における発散（t = 21,667）の原因である。
+  </p>
+  <p>
+    したがって本検証の値を書籍掲載の CFD 結果と並べて読む際は、
+    <strong>格子が同一ではない</strong>ことに留意されたい。
+    ただし格子 A・B・C は幾何相似な族をなし、見かけの収束次数 1.607・
+    GCI 1.5 〜 3.7 % で収束している（本節 4）。
+    格子の違いが実験との乖離（−13 〜 −28 %）を説明することはない。
+  </p>
+
   <figure class="fig">
     <img src="assets/mesh.png" alt="格子図">
     <figcaption><strong>図 1</strong>　格子 C（560,500 セル）の建物近傍。
@@ -351,7 +375,20 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
     格子 C の品質は、非直交角が最大 0・平均 0、歪みが 7.09×10<sup>−14</sup>、
     全ブロック境界でセル厚さの段差比 1.000、質量保存の global continuity error 3.7×10<sup>−8</sup> である。
     アスペクト比は最大 58.7 で、AIJ §7.1 が収束不良の要因として挙げる項目に該当する。
+    最小面積は 6.25×10<sup>−6</sup> m<sup>2</sup>（= 2.5 mm 角）で、開口部の分割
+    δ = H/60 と厳密に一致する。セルは 560,500 個すべて六面体である。
     4 風向の <code>blockMeshDict</code> は MD5 一致を確認した。
+  </p>
+  <p>
+    <code>checkMesh</code> は <code>buildingWall</code> について
+    <strong>multiply connected (shared edge)</strong> を報告する（19,114 edges）。
+    建物を<strong>厚さゼロの壁で囲った箱</strong>として表現しているため、
+    箱の稜線では 3 枚以上の面が 1 本のエッジを共有する。
+    <code>checkMesh</code> 自身がこれを
+    「possibly relevant for finite-area」と限定しているとおり、
+    表面流れ（finite-area）ソルバーを使う場合にのみ問題になる性質であり、
+    本解析が解く体積側の離散化には影響しない。本解析は finite-area を使用していない。
+    そのほかの項目は <code>Mesh OK</code> である。
   </p>
 </section>
 
@@ -526,13 +563,13 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
       <strong>残存する格子依存性は 1.5 〜 3.7%</strong> である。
     </p>
     <p>
-      これは実験との乖離 −13.4%（0°）と<strong>明確に桁が異なる</strong>。
+      これは実験との乖離 −14.4%（0°）と<strong>明確に桁が異なる</strong>。
       局所細分の格子族では GCI の上端 18.2% が乖離の下端に届いてしまい断定できなかったが、
       本評価により <strong>乖離を格子解像度で説明することはできないと確定した</strong>。
     </p>
     <p>
       外挿値 0.03618 は最細格子の 0.03663 より<em>低い</em>。
-      すなわち格子を細かくするほど実験値（0.0423）から遠ざかる。
+      すなわち格子を細かくするほど実験値（0.0428）から遠ざかる。
       格子解像度の向上によって一致が改善する見込みはない。
     </p>
   </div>
@@ -709,12 +746,9 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
         <th class="num">実験比</th><th class="num">書籍 SST k-ω</th><th class="num">書籍比</th></tr>
       </thead>
       <tbody>
-        <tr><td>0°</td><td class="num">0.03665</td><td class="num">0.0423</td>
-        <td class="num">−13.4%</td><td class="num">0.0400</td><td class="num">−8.4%</td></tr>
-        <tr><td>22.5°</td><td class="num">0.03674</td><td class="num">0.0447</td>
-        <td class="num">−17.8%</td><td class="num">0.0312</td><td class="num">+17.8%</td></tr>
-        <tr><td>45°</td><td class="num">0.02922</td><td class="num">0.0408</td>
-        <td class="num">−28.4%</td><td class="num">0.0288</td><td class="num">+1.5%</td></tr>
+        <tr><td>0°</td><td class="num">0.03665</td><td class="num">0.0428</td><td class="num">−14.4%</td><td class="num">0.0400</td><td class="num">−8.4%</td></tr>
+        <tr><td>22.5°</td><td class="num">0.03674</td><td class="num">0.0424</td><td class="num">−13.3%</td><td class="num">0.0312</td><td class="num">+17.8%</td></tr>
+        <tr><td>45°</td><td class="num">0.02922</td><td class="num">0.0373</td><td class="num">−21.7%</td><td class="num">0.0288</td><td class="num">+1.5%</td></tr>
       </tbody>
     </table>
   </div>
@@ -829,21 +863,21 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
         <th class="num">α=0.60</th><th class="num">α=0.70</th></tr>
       </thead>
       <tbody>
-        <tr><td>0°</td><td class="num">0.0423</td><td class="num">0.03665</td><td class="num">−13.4%</td>
-        <td class="num hi">0.03141</td><td class="num hi">−25.8%</td>
-        <td class="num">−31.5%</td><td class="num">−20.0%</td></tr>
-        <tr><td>22.5°</td><td class="num">0.0447</td><td class="num">0.03674</td><td class="num">−17.8%</td>
-        <td class="num hi">0.03189</td><td class="num hi">−28.7%</td>
-        <td class="num">−34.2%</td><td class="num">−23.2%</td></tr>
-        <tr><td>45°</td><td class="num">0.0408</td><td class="num">0.02922</td><td class="num">−28.4%</td>
-        <td class="num hi">0.02780</td><td class="num hi">−31.9%</td>
-        <td class="num">−37.1%</td><td class="num">−26.6%</td></tr>
+        <tr><td>0°</td><td class="num">0.0428</td><td class="num">0.03665</td><td class="num">−14.4%</td>
+        <td class="num hi">0.03141</td><td class="num hi">−26.6%</td>
+        <td class="num">−32.3%</td><td class="num">−21.0%</td></tr>
+        <tr><td>22.5°</td><td class="num">0.0424</td><td class="num">0.03674</td><td class="num">−13.3%</td>
+        <td class="num hi">0.03189</td><td class="num hi">−24.8%</td>
+        <td class="num">−30.6%</td><td class="num">−19.0%</td></tr>
+        <tr><td>45°</td><td class="num">0.0373</td><td class="num">0.02922</td><td class="num">−21.7%</td>
+        <td class="num hi">0.02780</td><td class="num hi">−25.5%</td>
+        <td class="num">−31.2%</td><td class="num">−19.7%</td></tr>
       </tbody>
     </table>
   </div>
   <div class="finding">
     <p>
-      <strong>自然換気式は実験値を 26 〜 32%（α = 0.65）下回り、CFD よりさらに悪い。</strong>
+      <strong>自然換気式は実験値を 25 〜 27%（α = 0.65）下回り、CFD よりさらに悪い。</strong>
       α をどの標準値に取っても、実験との差が CFD より縮まることはない。
       すなわち本ケースにおいて <strong>CFD は古典的なオリフィスモデルより実験に近い</strong>。
     </p>
@@ -1051,8 +1085,8 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
         <td class="num">10⁻⁸</td><td class="num">—</td></tr>
         <tr><td>Q/(U<sub>H</sub>H²)</td><td class="num">0.03665</td>
         <td class="num hi">0.03529</td><td class="num">−3.7%</td></tr>
-        <tr><td>実験比（0.0423）</td><td class="num">−13.4%</td>
-        <td class="num hi">−16.6%</td><td class="num">悪化</td></tr>
+        <tr><td>実験比（0.0428）</td><td class="num">−14.4%</td>
+        <td class="num hi">−17.5%</td><td class="num">悪化</td></tr>
         <tr><td>ΔC<sub>p</sub></td><td class="num">0.7992</td>
         <td class="num hi">0.8500</td><td class="num">+6.4%</td></tr>
         <tr><td>C<sub>p</sub> 風上</td><td class="num">0.6816</td>
@@ -1101,7 +1135,7 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
       書籍準拠の設定（QUICK + k-ω SST + SIMPLE）は 20,000 反復でも
       residualControl を満たさず、監視量の統計処理を要した。
       堅牢性と計算コストでは既定設定が明確に優れる。
-      一方、通風量の実験一致は −13.4% から −16.6% へ悪化した。
+      一方、通風量の実験一致は −14.4% から −17.5% へ悪化した。
       <strong>収束の速さと精度は別物である</strong>という、実務で見落とされやすい点が
       定量的に示された。
     </p>
@@ -1121,7 +1155,7 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
   <p>
     細格子では 0° と 22.5° の通風量がほぼ同値（0.0367）に収束した。
     既往の粗格子で見えていた風向による差が、格子を細かくすると消えていく。
-    一方、実験では 22.5° が 0° より大きい（0.0447 対 0.0423）。
+    一方、実験では 22.5°（0.0424）と 0°（0.0428）がほぼ等しい。
     この傾向を再現できていない点はモデル側の課題である。
   </p>
 
@@ -1374,7 +1408,7 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
       （560,500 / 174,048 / 66,528 セル、細分比 1.48 / 1.38）で評価し直すと、
       見かけの次数は <strong>1.607</strong>、収束は単調となり漸近域に入った。
       <strong>残存する格子依存性は GCI で 1.5 〜 3.7%</strong>（風向 0°）。
-      実験との乖離 −13.4% とは桁が異なり、
+      実験との乖離 −14.4% とは桁が異なり、
       <strong>乖離を格子解像度で説明することはできないと確定した</strong>。
       Richardson 外挿値 0.03618 は最細格子より低く、
       細分により一致が改善する見込みもない。
@@ -1397,7 +1431,7 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
     <li>
       ただし乱流モデルを標準 k-ε に替えると ΔC<sub>p</sub> は 6.4% 増加する一方で
       風上開口の α が 15% 低下し、正味では実験との差が広がった
-      （−13.4% → −16.6%）。<strong>ΔC<sub>p</sub> と α は独立に調整できない。</strong>
+      （−14.4% → −17.5%）。<strong>ΔC<sub>p</sub> と α は独立に調整できない。</strong>
       改善策は乱流モデルの選択だけでは尽きない。
     </li>
     <li>
@@ -1408,7 +1442,7 @@ flex-wrap:wrap;gap:6px 22px;font-family:var(--mono);font-size:12.5px}
     </li>
     <li>
       実務で用いられる自然換気の通風量式（2 開口の直列合成、α = 0.65）は、
-      同じ ΔC<sub>p</sub> のもとで実験値を 26 〜 32% 下回り、CFD より予測が悪い。
+      同じ ΔC<sub>p</sub> のもとで実験値を 25 〜 27% 下回り、CFD より予測が悪い。
       これは主として CFD の ΔC<sub>p</sub> を入力に用いたためであり、
       式自体の構造は §6.2 の測定により妥当性が確認されている。
     </li>
