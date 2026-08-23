@@ -82,7 +82,7 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
 <div class="kind">数値流体解析 報告書 / CFD ANALYSIS REPORT</div>
 <h1>市街地風環境 CFD 解析の妥当性確認<br>AIJ 風環境ベンチマーク ケース A（1:1:2 単体角柱）</h1>
 <p class="sub">定常 RANS による歩行者レベル風速の予測精度と適用範囲</p>
-<dl><dt>文書番号</dt><dd>CFD-AIJ-A-001</dd><dt>版数</dt><dd>1.0</dd><dt>発行日</dt><dd>2026-08-23</dd><dt>解析コード</dt><dd>OpenFOAM v2606 (ESI) / simpleFoam</dd><dt>照合データ</dt><dd>風洞実験 186 点（歩行者レベル 65 点）</dd><dt>準拠基準</dt><dd>AIJ CFD ガイドブック 第3編 / 風工学会 第7章</dd></dl>
+<dl><dt>文書番号</dt><dd>CFD-AIJ-A-001</dd><dt>版数</dt><dd>1.0</dd><dt>発行日</dt><dd>2026-08-23</dd><dt>解析コード</dt><dd>OpenFOAM v2606 (ESI) / simpleFoam</dd><dt>照合データ</dt><dd>風洞実験 186 点（歩行者レベル 65 点）</dd><dt>評価高さ</dt><dd>z = 0.010 m（= 0.0625 H、模型座標）</dd><dt>準拠基準</dt><dd>AIJ CFD ガイドブック 第3編 / 風工学会 第7章</dd></dl>
 </div>
 <div class="scroller"><table><caption>表 1　改訂履歴</caption><thead><tr><th>版</th><th>日付</th><th>改訂内容</th></tr></thead><tbody><tr><td class="num">0.9</td><td class="num">—</td><td>初版。計算格子がガイドライン不適合（隣接セル比 1.41、評価点近傍の最大セル 14.2 mm）のため<b>破棄</b></td></tr><tr><td class="num">1.0</td><td class="num">2026-08-23</td><td>計算格子を基準適合に作り直し、全ケースを再計算。照合指標を既報と同じ形（原点通過回帰・風速増加率の誤差帯）に変更</td></tr></tbody></table></div>
 <p class="capnote">版 0.9 の数値は本書では使用していない。差し替えの経緯は 3.1 に記す。</p>
