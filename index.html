@@ -203,6 +203,53 @@ footer a{color:var(--accent)}
   <dl class="meta">
     <div>
       <dt>対象</dt>
+      <dd>市街地風環境（等温）<br>単独建物まわりの流れ</dd>
+    </div>
+    <div>
+      <dt>比較先</dt>
+      <dd class="src">風洞実験</dd>
+      <dd>AIJ 市街地風環境ベンチマーク ケース B<br>Miyazaki &amp; Tominaga (2003)、CC BY 4.0</dd>
+    </div>
+  </dl>
+  <div>
+    <h2><a href="aij-caseB/">AIJ 市街地風環境ベンチマーク ケース B</a></h2>
+    <p>
+      1:4:4 の板状建物まわりを 224 点の風洞実験値と照合。
+      角柱（ケース A）と同じ手順・同じ 8 モデルで解き、形状が変わっても
+      手順が通用するかを見ています。
+      <strong>このケースに対応する同形状の公表値はガイドブックに無い</strong>ため、
+      比較の錨には同一手法で解いたケース A を用い、その旨を本文に明記しました。
+      4 / 8 モデルは収束条件を満たし、残りは反復上限で打ち切っています。
+      打ち切りの中身（残差が頭打ちか、収束途上か）も残差の実数で書き分けました。
+    </p>
+    <dl class="figures">
+      <div>
+        <dt>風速比の回帰（原点通過）</dt>
+        <dd class="good">a = 1.01, R&sup2; = 0.91</dd>
+      </div>
+      <div>
+        <dt>全 224 点の RMSE</dt>
+        <dd class="good">0.1175（Kato-Launder）</dd>
+      </div>
+      <div>
+        <dt>モデル間の RMSE 幅</dt>
+        <dd>0.0422</dd>
+      </div>
+    </dl>
+    <ul class="tags">
+      <li>OpenFOAM v2606 / simpleFoam</li>
+      <li>712,416 セル</li>
+      <li>乱流モデル 8 種</li>
+      <li>Re = 72,000</li>
+      <li>歩行者高さ 122 点</li>
+    </ul>
+  </div>
+</article>
+
+<article class="entry">
+  <dl class="meta">
+    <div>
+      <dt>対象</dt>
       <dd>通風（等温）<br>外部風・開口流れ</dd>
     </div>
     <div>
