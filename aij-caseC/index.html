@@ -219,7 +219,7 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
 </ol>
 <p class="note">実験データ [1] は <b>CC BY 4.0</b> であり、帰属表示を条件に利用できる。データ提供は Yoshitami Nonomura（Yamato University）、編集・配布は Yoshihide Tominaga（Niigata Institute of Technology）、Hideki Kikumoto（The University of Tokyo）、Tsubasa Okaze（Institute of Science Tokyo）。<b>実験データそのものは再配布していない。</b>本報告に載せているのは計算結果と、照合のための統計量および図である。</p>
 <h2 id="s___A">付録 A　計算条件書</h2>
-<p>本書の条件表は説明のために要約したものである。<b>実際に計算機が読み込んだ設定</b>は本書 2 章（解析条件）に要約している。<b>別冊の計算条件書は本ケースでは未作成である。</b></p>
+<p>本書の条件表は説明のために要約したものである。<b>実際に計算機が読み込んだ設定</b>は<a href="conditions_C.html">付録 A 計算条件書</a>にまとめてある。</p>
 <p>再現に要る一式は次のとおり。ソルバー OpenFOAM v2606 （simpleFoam）。乱流モデル kEpsilonKL は Kato &amp; Launder (1993) の実装であり、独自に考案したモデルではない。格子は <code>system/blockMeshDict</code> から blockMesh で生成する（格子ファイルそのものは配布していない — 生成が再現性の一部だから）。</p>
 <h2 id="s___B">付録 B　図表一覧</h2>
 <p><b>図</b></p><ol><li>計算格子（中央棟 1D）</li><li>助走区間での接近流分布（中央棟 1D・風向 0°）</li><li>計算のコンターに実測点を重ねたもの（9 条件）</li><li>各測点での差（計算 − 実測）</li><li>歩行者高さ z = 0.02 m の流れ場（9 条件）</li><li>街路キャニオン内の流れ（y = 0 の鉛直断面・風向 0°）</li><li>中央棟 1D（周囲と同じ高さ）・風向 0° の流れ</li><li>中央棟 2D（周囲の 2 倍）・風向 0° の流れ</li></ol>
