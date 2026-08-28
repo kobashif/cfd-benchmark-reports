@@ -249,6 +249,56 @@ footer a{color:var(--accent)}
 <article class="entry">
   <dl class="meta">
     <div>
+      <dt>公開</dt>
+      <dd>2026-08-28</dd>
+    </div>
+    <div>
+      <dt>対象</dt>
+      <dd>AIJ 市街地風環境ベンチマーク ケース C<br>Nonomura ほか (2003)、CC BY 4.0</dd>
+    </div>
+  </dl>
+  <div>
+    <h2><a href="aij-caseC/">AIJ 市街地風環境ベンチマーク ケース C</a></h2>
+    <p>
+      3&times;3 街区まわりを <strong>9 条件 1080 点</strong>の風洞実験値と照合。
+      中央棟の高さ 3 種（0D / 1D / 2D）と風向 3 種（0&deg; / 22.5&deg; / 45&deg;）を
+      すべて解いています。
+      <strong>実測はサーミスタ風速計の平均スカラー風速</strong>で、成分ではなく
+      速度の大きさです。RANS が与えるのは平均速度の大きさなので、
+      両者には原理的な差があります。偏りが全条件で負になるのはこのためで、
+      その区別を本文に明記しました。
+      <strong>9 条件すべてが収束判定に届かず、5000 反復での打ち切り解</strong>です。
+      発散ではありません。3 段の格子で観測次数 2.03 を実測しましたが、
+      単調収束したのは 82 / 120 点にとどまります。
+    </p>
+    <dl class="figures">
+      <div>
+        <dt>風速比の回帰（9 条件通し）</dt>
+        <dd class="good">a = 1.12, R&sup2; = 0.76</dd>
+      </div>
+      <div>
+        <dt>全 1080 点の RMSE</dt>
+        <dd>0.233</dd>
+      </div>
+      <div>
+        <dt>格子を倍にしたときの動き</dt>
+        <dd class="good">RMSE の 12 %</dd>
+      </div>
+    </dl>
+    <ul class="tags">
+      <li>OpenFOAM v2606 / simpleFoam</li>
+      <li>376,844〜867,200 セル</li>
+      <li>9 条件（配置 3 &times; 風向 3）</li>
+      <li>Re = 52,000</li>
+      <li>歩行者高さ 1080 点</li>
+    </ul>
+  </div>
+</article>
+
+
+<article class="entry">
+  <dl class="meta">
+    <div>
       <dt>対象</dt>
       <dd>通風（等温）<br>外部風・開口流れ</dd>
     </div>
