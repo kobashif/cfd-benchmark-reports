@@ -82,9 +82,9 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
 <div class="kind">数値流体解析 報告書 / CFD ANALYSIS REPORT</div>
 <h1>市街地風環境 CFD 解析の妥当性確認<br>AIJ 風環境ベンチマーク ケース A（1:1:2 単体角柱）</h1>
 <p class="sub">定常 RANS による歩行者レベル風速の予測精度と適用範囲</p>
-<dl><dt>文書番号</dt><dd>CFD-AIJ-A-001</dd><dt>版数</dt><dd>1.0</dd><dt>発行日</dt><dd>2026-08-28</dd><dt>解析コード</dt><dd>OpenFOAM v2606 (ESI) / simpleFoam</dd><dt>照合データ</dt><dd>風洞実験 186 点（歩行者レベル 65 点）</dd><dt>評価高さ</dt><dd>z = 0.0625 H（模型 0.010 m、実寸換算は 10.2）</dd><dt>準拠基準</dt><dd>AIJ CFD ガイドブック 第3編 / 風工学会 第7章</dd></dl>
+<dl><dt>文書番号</dt><dd>CFD-AIJ-A-001</dd><dt>版数</dt><dd>1.0</dd><dt>発行日</dt><dd>2026-08-29</dd><dt>解析コード</dt><dd>OpenFOAM v2606 (ESI) / simpleFoam</dd><dt>照合データ</dt><dd>風洞実験 186 点（歩行者レベル 65 点）</dd><dt>評価高さ</dt><dd>z = 0.0625 H（模型 0.010 m、実寸換算は 10.2）</dd><dt>準拠基準</dt><dd>AIJ CFD ガイドブック 第3編 / 風工学会 第7章</dd></dl>
 </div>
-<div class="scroller"><table><caption>表 1　改訂履歴</caption><thead><tr><th>版</th><th>日付</th><th>改訂内容</th></tr></thead><tbody><tr><td class="num">0.9</td><td class="num">—</td><td>初版。計算格子がガイドライン不適合（隣接セル比 1.41、評価点近傍の最大セル 14.2 mm）のため<b>破棄</b></td></tr><tr><td class="num">1.0</td><td class="num">2026-08-28</td><td>計算格子を基準適合に作り直し、全ケースを再計算。照合指標を既報と同じ形（原点通過回帰・風速増加率の誤差帯）に変更</td></tr></tbody></table></div>
+<div class="scroller"><table><caption>表 1　改訂履歴</caption><thead><tr><th>版</th><th>日付</th><th>改訂内容</th></tr></thead><tbody><tr><td class="num">0.9</td><td class="num">—</td><td>初版。計算格子がガイドライン不適合（隣接セル比 1.41、評価点近傍の最大セル 14.2 mm）のため<b>破棄</b></td></tr><tr><td class="num">1.0</td><td class="num">2026-08-29</td><td>計算格子を基準適合に作り直し、全ケースを再計算。照合指標を既報と同じ形（原点通過回帰・風速増加率の誤差帯）に変更</td></tr></tbody></table></div>
 <p class="capnote">版 0.9 の数値は本書では使用していない。差し替えの経緯は 3.1 に記す。</p>
 <nav class="toc"><h2>目次</h2><ol><li><a href="#s0">0. 要旨</a></li><li><a href="#s1">1. 業務概要</a></li><li><a href="#s2">2. 解析条件</a></li><li><a href="#s3">3. 検証（Verification）</a></li><li><a href="#s4">4. 流入条件の再現性</a></li><li><a href="#s5">5. 妥当性確認（Validation）</a></li><li><a href="#s6">6. 乱流モデルの影響</a></li><li><a href="#s7">7. 非定常解析の適用性</a></li><li><a href="#s8">8. 流れ場の可視化</a></li><li><a href="#s9">9. 結論</a></li><li><a href="#s10">10. 適用範囲および留意事項</a></li><li><a href="#s11">11. 参考文献</a></li><li><a href="#s___A">付録 A　計算条件書</a></li><li><a href="#s___B">付録 B　図表一覧</a></li></ol></nav>
 <h2 id="s0">0. 要旨</h2>
@@ -188,7 +188,7 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
 <h2 id="s___B">付録 B　図表一覧</h2>
 <p><b>図</b></p><ol><li>計算格子（鉛直中心断面および歩行者レベル面）</li><li>格子依存性</li><li>空領域における接近流の水平一様性</li><li>計算と実測の等値線を同じ目盛で並べる</li><li>歩行者高さにおける場の照合</li><li>全測点における風速 3 成分および乱流エネルギーの比較</li><li>歩行者レベル面における照合</li><li>乱流モデル別の比較</li><li>非定常解析における横方向変動の時間履歴</li><li>建物前面の逆流（ビル風のもと）が再現されているか</li><li>歩行者高さの風速比とベクトル、乱流エネルギー、中心鉛直断面</li></ol>
 <p><b>表</b></p><ol><li>改訂履歴</li><li>要旨</li><li>対象および照合データ</li><li>準拠した基準と本解析の適合状況</li><li>形状および計算領域</li><li>計算格子</li><li>境界条件</li><li>数値解法</li><li>比較した乱流モデル</li><li>計算環境および実行状況（基準ケース）</li><li>最終 200 反復における初期残差（基準ケース）</li><li>格子依存性</li><li>CFD 予測値と実測値の関係（原点通過回帰 y = a x）</li><li>乱流モデル別の照合結果</li><li>歩行者レベル面における風速増加率の誤差（既報と同じ切り口）</li><li>領域別の乱流エネルギー比（計算/実測）および後流の風速偏り</li><li>モデル順位づけの成立判定</li><li>結論</li><li>適用範囲</li><li>縮尺を仮定した場合の実寸換算（参考）</li></ol>
-<div class="sig"><div>文書番号 CFD-AIJ-A-001 ／ 版 1.0 ／ 発行 2026-08-28</div><div>OpenFOAM v2606 (ESI) ・ simpleFoam ・ 実測 186 点</div><div>本報告の数値は report/metrics_A.json および report/facts_A.json から機械的に生成しており、本文に直接記入した値は無い。</div></div>
+<div class="sig"><div>文書番号 CFD-AIJ-A-001 ／ 版 1.0 ／ 発行 2026-08-29</div><div>OpenFOAM v2606 (ESI) ・ simpleFoam ・ 実測 186 点</div><div>本報告の数値は report/metrics_A.json および report/facts_A.json から機械的に生成しており、本文に直接記入した値は無い。</div></div>
 </div>
 </body>
 </html>
