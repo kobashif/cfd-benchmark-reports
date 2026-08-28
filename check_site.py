@@ -36,6 +36,18 @@ SOURCES = {
         "/mnt/c/Users/DZH05/claude-2/crossvent-benchmark/numerics.html",
     "crossvent/videos.html":
         "/mnt/c/Users/DZH05/claude-2/crossvent-benchmark/videos.html",
+    # **ケース B が抜けていた。**
+    "aij-caseB/index.html": "/mnt/c/Users/DZH05/claude-5/report/index_B.html",
+    "aij-caseB/conditions_B.html":
+        "/mnt/c/Users/DZH05/claude-5/report/conditions_B.html",
+    "aij-caseC/index.html": "/mnt/c/Users/DZH05/claude-6/report/index_C.html",
+    # **動画が抜けていた。**流線版に作り替えたのに公開されず、
+    # 古いベクトル版のままだったのを指摘されて気づいた。
+    # 点検の網から漏れているものは、点検が無いのと同じ。
+    "aij-caseA/video/wind_A.mp4":
+        "/mnt/c/Users/DZH05/claude-5/report/video/wind_A.mp4",
+    "aij-caseB/video/wind_B.mp4":
+        "/mnt/c/Users/DZH05/claude-5/report/video/wind_B.mp4",
 }
 
 # 残っていたら怪しい語。過去に実際やらかした型を登録していく。
