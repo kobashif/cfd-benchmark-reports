@@ -41,6 +41,7 @@ SOURCES = {
     "aij-caseB/conditions_B.html":
         "/mnt/c/Users/DZH05/claude-5/report/conditions_B.html",
     "aij-caseC/index.html": "/mnt/c/Users/DZH05/claude-6/report/index_C.html",
+    "aij-caseD/index.html": "/mnt/c/Users/DZH05/claude-8/report/index_D.html",
     "aij-caseC/conditions_C.html":
         "/mnt/c/Users/DZH05/claude-6/report/conditions_C.html",
     # **動画が抜けていた。**流線版に作り替えたのに公開されず、

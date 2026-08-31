@@ -296,6 +296,55 @@ footer a{color:var(--accent)}
     </ul>
   </div>
 </article>
+  <article class="entry">
+    <dl class="meta">
+      <div>
+        <dt>公開</dt>
+        <dd>2026-08-31</dd>
+      </div>
+      <div>
+        <dt>対象</dt>
+        <dd>AIJ 市街地風環境ベンチマーク ケース D<br>Tominaga ほか (2008)、CC BY 4.0</dd>
+      </div>
+    </dl>
+    <div>
+      <h2><a href="aij-caseD/">AIJ 市街地風環境ベンチマーク ケース D</a></h2>
+      <p>
+      低層街区の中に立つ高層棟 1 棟（実寸 60 m）まわりを、風向 3 種
+      （0&deg; / 22.5&deg; / 45&deg;）について風洞実験と照合。
+      <strong>このデータセットには測る量の違う 2 種類の測器がある</strong>ため、
+      ケース C では推定に留まっていた「負の偏りは計算の誤差ではない」という
+      説明を、<strong>実測どうしの突き合わせで確かめられました</strong>。
+      同じ 33 点で比べたとき、<strong>同じ量どうしなら偏りは +0.014</strong>
+      しかないのに対し、<strong>別の量と比べると -0.087</strong> になります。
+      計算を一切変えずに、比べる相手を替えるだけでこの差が生じます。
+      乱れによる補正は偏りの 45 % を説明し、残りは補正に使う k が
+      計算値であることに由来します。<strong>補正後の値は下限の見積り</strong>です。
+      </p>
+      <dl class="figures">
+        <div>
+          <dt>成分どうしの照合（風向 0&deg;）</dt>
+          <dd class="good">RMSE 0.0810, 偏り +0.014</dd>
+        </div>
+        <div>
+          <dt>回帰の傾き（風向 45&deg;）</dt>
+          <dd class="good">a = 1.035, R&sup2; = 0.78</dd>
+        </div>
+        <div>
+          <dt>実測どうしの比 &#10216;|u|&#10217; / |&#10216;u&#10217;|</dt>
+          <dd>1.308</dd>
+        </div>
+      </dl>
+      <ul class="tags">
+        <li>OpenFOAM v2606 / simpleFoam</li>
+        <li>2,002,864 セル</li>
+        <li>風向 3 種</li>
+        <li>Re = 110,000</li>
+        <li>歩行者高さ z / H = 0.02</li>
+      </ul>
+    </div>
+  </article>
+
 
 
 <article class="entry">
