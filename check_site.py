@@ -61,6 +61,8 @@ SOURCES = {
         "/mnt/c/Users/DZH05/claude-8/report/video/wake_D.mp4",
     "aij-caseD/video/particles_D.mp4":
         "/mnt/c/Users/DZH05/claude-8/report/video/particles_D.mp4",
+    "aij-caseD/video/tube_D.mp4":
+        "/mnt/c/Users/DZH05/claude-8/report/video/tube_D.mp4",
 }
 
 # 残っていたら怪しい語。過去に実際やらかした型を登録していく。
