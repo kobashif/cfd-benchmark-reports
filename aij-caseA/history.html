@@ -1,0 +1,87 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIJ ケース A 風環境 CFD 解析報告書 — CFD-AIJ-A-001 版 1.0</title>
+<meta name="description" content="AIJ 風環境ベンチマーク ケース A （1:1:2 単体角柱）の定常 RANS 解析と風洞実験 186 点との照合">
+<style>
+:root{--ground:#EEF1F4;--paper:#FFFFFF;--sunk:#F2F5F7;--ink:#14202B;
+--muted:#55697A;--faint:#8496A3;--rule:#C9D4DC;--rule2:#8FA3B0;
+--accent:#14406B;--good:#0E6B52;--warn:#9A5B06;--bad:#95261C;
+--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-size:15px;
+line-height:1.85;font-family:-apple-system,BlinkMacSystemFont,
+"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+font-feature-settings:"palt"}
+.sheet{max-width:960px;margin:0 auto;background:var(--paper);
+padding:52px 62px 84px;box-shadow:0 1px 3px rgba(20,32,43,.10)}
+.cover{border-bottom:3px double var(--rule2);padding-bottom:30px;margin-bottom:8px}
+.cover .kind{font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;
+color:var(--accent);margin-bottom:26px}
+.cover h1{font-size:27px;line-height:1.45;margin:0 0 6px;font-weight:700}
+.cover .sub{font-size:16.5px;color:var(--muted);margin:0 0 26px}
+.cover dl{display:grid;grid-template-columns:8.5em 1fr;gap:3px 16px;
+font-size:13.5px;margin:0}
+.cover dt{color:var(--faint)}
+.cover dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums}
+h2{font-size:19px;margin:44px 0 12px;padding:10px 0 8px;
+border-top:2px solid var(--rule2);border-bottom:1px solid var(--rule)}
+h3{font-size:15.5px;margin:26px 0 8px;color:var(--accent)}
+h4{font-size:14px;margin:18px 0 6px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:1.5em}
+li{margin:0 0 4px}
+nav.toc{background:var(--sunk);border:1px solid var(--rule);padding:18px 26px;
+margin:26px 0 8px;font-size:14px}
+nav.toc h2{border:none;margin:0 0 8px;padding:0;font-size:15px}
+nav.toc ol{list-style:none;padding:0;margin:0;columns:2;column-gap:34px}
+nav.toc li{margin:0 0 3px;break-inside:avoid}
+nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--rule2)}
+nav.toc a:hover{color:var(--accent)}
+.scroller{overflow-x:auto;margin:6px 0 4px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--paper)}
+th,td{border:1px solid var(--rule);padding:7px 10px;text-align:left;
+vertical-align:top}
+th{background:var(--sunk);font-weight:600;font-size:12.5px;color:var(--muted)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+tbody tr:nth-child(even){background:#FAFCFD}
+caption{caption-side:top;text-align:left;font-size:13px;color:var(--muted);
+padding:10px 0 5px;font-weight:600}
+.capnote{font-size:12.5px;color:var(--faint);margin:3px 0 20px;line-height:1.7}
+figure{margin:16px 0 22px}
+img{max-width:100%;height:auto;border:1px solid var(--rule);background:var(--paper)}
+figcaption{font-size:13px;color:var(--muted);font-weight:600;margin-top:8px}
+figcaption .n{color:var(--accent)}
+.note{border:1px solid var(--rule);border-left:4px solid var(--accent);
+background:var(--sunk);padding:13px 17px;margin:16px 0;font-size:14px}
+.note.good{border-left-color:var(--good)}
+.note.warn{border-left-color:var(--warn)}
+.note.bad{border-left-color:var(--bad)}
+.note h4{margin:0 0 6px;font-size:14px}
+.note p:last-child{margin-bottom:0}
+span.good{color:var(--good);font-weight:600}
+span.warn{color:var(--warn);font-weight:600}
+span.bad{color:var(--bad);font-weight:600}
+code{font-family:var(--mono);font-size:.9em;background:var(--sunk);
+padding:1px 4px;border-radius:2px}
+.refs{font-size:13.5px}
+.refs li{margin-bottom:7px}
+.sig{margin-top:44px;border-top:1px solid var(--rule);padding-top:14px;
+font-size:12.5px;color:var(--faint);font-family:var(--mono)}
+@media print{body{background:#fff}.sheet{box-shadow:none;max-width:none;padding:0}
+h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
+@media(max-width:760px){.sheet{padding:30px 20px 60px}nav.toc ol{columns:1}
+.cover h1{font-size:22px}}
+</style>
+</head><body><div class="wrap"><p class="capnote"><a href="index.html">← 結果のページへ戻る</a></p>
+<h1>検討の経緯</h1>
+<p class="capnote"><b>このページは結果ではない。</b>どこで誤り、どう直したかの記録である。結果は<a href="index.html">本編</a>にある。本編から切り出したもので、内容は変えていない。</p>
+<h2 id="h1">1. 初版の格子は基準を満たしていなかった</h2>
+<p class="capnote">本編の「3. 検証（Verification）」より</p>
+<div class="note warn"><h4>初版の格子は基準を満たしていなかった</h4><p>初版（版 0.9）の格子は次の 2 点でガイドラインに適合していなかった。本書ではこれを作り直したうえで全ケースを再計算している。</p><ul><li><b>隣り合うセルの大きさの比が 1.41</b>（上限 1.3）。blockMesh の分割指定に書く比は<b>帯の端から端までの総比</b>であって隣接セルの比ではない。5 セルで総比 4 なら隣接比は 4<sup>1/4</sup> = 1.41 になる。これを取り違えて適合と判定していた。</li><li><b>建物面中央のセルが 14.2 mm</b>（上限 b/10 = 8.0 mm）。一様分割としてのセル数を決めてから集中分布をかけたため、平均は目標どおりでも最大が超えていた。</li></ul><p>さらに帯ごとに伸長比を決めていたため、<b>ブロック境界で寸法が3.3 倍飛んでいた</b>。帯の内部だけを見る検査ではこれを検出できない。</p><p>現在はセル寸法を端点で指定して分割数を逆算する方式とし、生成器自身が隣接比・最大寸法・評価高さのセル番号・閉塞率を検査して、外れた場合は生成を中止する。検査は生成器と別実装のものでも行っている。</p></div>
+<h2 id="h2">2. この判定より大きな不確かさが見つかっている（2026-09-05・調査中）</h2>
+<p class="capnote">本編の「6. 乱流モデルの影響」より</p>
+<div class="note bad"><h4>この判定より大きな不確かさが見つかっている（2026-09-05・調査中）</h4><p>上の物差しは<b>同じ計算の中で位相を変えたときの動き</b>である。しかし<b>収束の度合いを変えて追加計算を行うと、指標はそれよりはるかに大きく動いた。</b></p><ul><li>k-ω SST　全点 RMSE 0.1730 → <b>0.1957</b>（差 0.0227）</li><li>MMK　　　0.1609 → <b>0.1883</b>（差 0.0274）</li><li>LRR　　　0.1694 → <b>0.1905</b>（差 0.0211）</li><li>SSG　　　0.2191 → <b>0.2340</b>（差 0.0148）</li></ul><p><b>4 モデルとも同じ向きに動いた。</b>収束していないモデルの値は 0.188〜0.234 に寄り、<b>収束している 4 モデル（0.126〜0.131）とははっきり離れる。</b>一方、収束していない 4 モデルどうしの差は最大でも 0.046 で、上の不確かさ（0.015〜0.027）と同程度である。<b>その 4 つの間で順位を論じることはできない。</b></p><p>いずれも発散はしていない。残差は下がったが、<b>それでも収束判定には届かない。</b></p><p><b>この差を物差しに取ると、モデル間の幅 0.0934 との比は3.4 倍まで下がる。</b>判定の基準（3 倍）をかろうじて超えるにすぎない。<b>上の「成立する」という判定は、この不確かさを含めていない。</b></p><p>調査は途中である。<b>本節の順位を確定したものとして引用しないこと。</b></p></div>
+<h2 id="h3">3. 対称性を破らない初期条件では検証にならない</h2>
+<p class="capnote">本編の「7. 非定常解析の適用性」より</p>
+<div class="note warn"><h4>対称性を破らない初期条件では検証にならない</h4><p>当初、収束した定常解を初期値として URANS を実行したが、解かれた変動が厳密に 0 であった。領域・境界条件・流入がいずれも左右対称であり、離散化された式は対称性を保存するため、対称性の破れを必要とするカルマン渦は成長しない。</p><p>これは<b>設定の誤りであって、URANS の性能を否定したものではない</b>。建物直後の片側にのみ横向きの速度を与え、対称性を明示的に破って再計算した。</p></div></div></body></html>

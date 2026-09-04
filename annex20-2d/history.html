@@ -1,0 +1,108 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IEA Annex 20 室内気流ベンチマーク（2 次元テストケース） — CFD-A20-2D-001 版 2.0</title>
+<meta name="description" content="IEA Annex 20 2 次元テストケースの等温流れ場を OpenFOAM で解き、公開 LDV 実測値と照合した受託解析レポート">
+<style>
+:root{--ground:#EEF1F4;--paper:#FFFFFF;--sunk:#F2F5F7;--ink:#14202B;
+--muted:#55697A;--faint:#8496A3;--rule:#C9D4DC;--rule2:#8FA3B0;
+--accent:#14406B;--good:#0E6B52;--warn:#9A5B06;--bad:#95261C;
+--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-size:15px;
+line-height:1.85;font-family:-apple-system,BlinkMacSystemFont,
+"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+font-feature-settings:"palt"}
+.sheet{max-width:960px;margin:0 auto;background:var(--paper);
+padding:52px 62px 84px;box-shadow:0 1px 3px rgba(20,32,43,.10)}
+.cover{border-bottom:3px double var(--rule2);padding-bottom:30px;margin-bottom:8px}
+.cover .kind{font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;
+color:var(--accent);margin-bottom:10px}
+.cover .vol{font-size:13px;color:var(--muted);margin-bottom:16px;
+font-weight:600;letter-spacing:.04em}
+.cover h1{font-size:27px;line-height:1.45;margin:0 0 6px;font-weight:700}
+.cover .sub{font-size:16.5px;color:var(--muted);margin:0 0 26px}
+.cover dl{display:grid;grid-template-columns:8.5em 1fr;gap:3px 16px;
+font-size:13.5px;margin:0}
+.cover dt{color:var(--faint)}
+.cover dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.series{font-size:13px;color:var(--muted);border:1px solid var(--rule);
+background:var(--sunk);padding:10px 16px;margin:18px 0 0}
+.series a{color:var(--accent)}
+h2{font-size:19px;margin:44px 0 12px;padding:10px 0 8px;
+border-top:2px solid var(--rule2);border-bottom:1px solid var(--rule)}
+h3{font-size:15.5px;margin:26px 0 8px;color:var(--accent)}
+h4{font-size:14px;margin:18px 0 6px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:1.5em}
+li{margin:0 0 4px}
+nav.toc{background:var(--sunk);border:1px solid var(--rule);padding:18px 26px;
+margin:26px 0 8px;font-size:14px}
+nav.toc h2{border:none;margin:0 0 8px;padding:0;font-size:15px}
+nav.toc ol{list-style:none;padding:0;margin:0;columns:2;column-gap:34px}
+nav.toc li{margin:0 0 3px;break-inside:avoid}
+nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--rule2)}
+nav.toc a:hover{color:var(--accent)}
+.scroller{overflow-x:auto;margin:6px 0 4px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--paper)}
+th,td{border:1px solid var(--rule);padding:7px 10px;text-align:left;
+vertical-align:top}
+th{background:var(--sunk);font-weight:600;font-size:12.5px;color:var(--muted)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+tbody tr:nth-child(even){background:#FAFCFD}
+caption{caption-side:top;text-align:left;font-size:13px;color:var(--muted);
+padding:10px 0 5px;font-weight:600}
+.capnote{font-size:12.5px;color:var(--faint);margin:3px 0 20px;line-height:1.7}
+figure{margin:16px 0 22px}
+img,video{max-width:100%;height:auto;border:1px solid var(--rule);
+background:var(--paper)}
+figcaption{font-size:13px;color:var(--muted);font-weight:600;margin-top:8px}
+figcaption .n{color:var(--accent)}
+.note{border:1px solid var(--rule);border-left:4px solid var(--accent);
+background:var(--sunk);padding:13px 17px;margin:16px 0;font-size:14px}
+.note.good{border-left-color:var(--good)}
+.note.warn{border-left-color:var(--warn)}
+.note.bad{border-left-color:var(--bad)}
+.note h4{margin:0 0 6px;font-size:14px}
+.note p:last-child{margin-bottom:0}
+span.good{color:var(--good);font-weight:600}
+span.warn{color:var(--warn);font-weight:600}
+span.bad{color:var(--bad);font-weight:600}
+code{font-family:var(--mono);font-size:.9em;background:var(--sunk);
+padding:1px 4px;border-radius:2px}
+.refs{font-size:13.5px}
+.refs li{margin-bottom:7px}
+.sig{margin-top:44px;border-top:1px solid var(--rule);padding-top:14px;
+font-size:12.5px;color:var(--faint);font-family:var(--mono)}
+@media print{body{background:#fff}.sheet{box-shadow:none;max-width:none;padding:0}
+h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
+@media(max-width:760px){.sheet{padding:30px 20px 60px}nav.toc ol{columns:1}
+.cover h1{font-size:22px}}
+</style>
+</head><body><div class="wrap"><p class="capnote"><a href="index.html">← 結果のページへ戻る</a></p>
+<h1>検討の経緯</h1>
+<p class="capnote"><b>このページは結果ではない。</b>どこで誤り、どう直したかの記録である。結果は<a href="index.html">本編</a>にある。本編から切り出したもので、内容は変えていない。</p>
+<h2 id="h1">1. 時間スケールが 2 つあり、18 倍違う</h2>
+<p class="capnote">本編の「2. 計算領域および計算格子」より</p>
+<div class="note bad"><h4>時間スケールが 2 つあり、18 倍違う</h4><div class="scroller"><table class=""><caption>表 5　流過時間と熱時定数。温度場の平衡を決めるのは 18 倍長い熱時定数のほう</caption><thead><tr><th></th><th>定義</th><th>値</th></tr></thead><tbody><tr><td>流過時間 T<sub>flow</sub></td><td class="num">L / u<sub>0</sub></td><td class="num">19.8 s</td></tr><tr><td>熱時定数 &tau;</td><td>V / Q<sub>vol</sub> = L&middot;H / (u<sub>0</sub>&middot;h)</td><td class="num">353 s</td></tr></tbody></table></div><p>温度場が平衡するのは <b>&tau;</b> であって T<sub>flow</sub> ではない。等温ケースの感覚で数流過時間だけ回すと、室内はほぼ給気温度のままになり浮力が実際よりはるかに弱く見える。実際 t = 35 s の時点では &Delta;T<sub>0</sub> = 0.028 K（Ar = 7.6e-4）で、目標 Ar = 0.02 の 1/26 だった。</p><p>これを最初「床温が足りない」と読みかけたが誤りで、単に時間が足りていなかった。既定の <code>endTime</code> を 3.4&tau; に改めた。</p></div>
+<h2 id="h2">2. 実測データの座標系に注意を要する</h2>
+<p class="capnote">本編の「3. 照合データ」より</p>
+<div class="note bad"><h4>実測データの座標系に注意を要する</h4><p>公開 XLS の y 座標は<b>「吹出口のある壁からの距離」</b>で測られており、同書の図4.2.6（床からの高さ）とは<b>上下が逆</b>である。直接重ねると結論が丸ごと反転する。</p><p>ゼロ交差で照合して確定した &mdash; x=H 断面は XLS で 0.424、同書 図4.2.9 で y/H &asymp; 0.55（= 1 &minus; 0.45）。変換は <code>y/H = 1 &minus; (XLS 縦座標)</code>。</p><p>水平 2 測線もラベルと実体が入れ替わる。XLS の <code>y=h/2</code> はx/H = 0.004 で U/u<sub>0</sub> = 1.081 と u<sub>0</sub> を超える。噴流は天井を走るので、この列は<b>天井側</b>でしかありえない。</p></div>
+<h2 id="h3">3. 同書 表4.2.3 と一次資料の食い違い</h2>
+<p class="capnote">本編の「3. 照合データ」より</p>
+<div class="note bad"><h4>同書 表4.2.3 と一次資料の食い違い</h4><div class="scroller"><table class=""><caption>表 6　流入条件の食い違い。同書の式では k<sub>0</sub> が 6.25 倍、&epsilon;<sub>0</sub> が 2.6 倍になる</caption><thead><tr><th>量</th><th>一次資料 (Nielsen 1990)</th><th>同書 表4.2.3</th></tr></thead><tbody><tr><td>k<sub>0</sub></td><td class="num">1.5 (0.04 u<sub>0</sub>)&sup2; &rarr; <b>TI = 4 %</b></td><td class="num">3/2 (U<sub>in</sub> &times; 0.1)&sup2; &rarr; TI = 10 %</td></tr><tr><td>&epsilon;<sub>0</sub></td><td class="num">k<sub>0</sub><sup>1.5</sup> / &ell;<sub>0</sub>（<b>C<sub>&mu;</sub> 係数なし</b>）</td><td>C<sub>&mu;</sub><sup>0.75</sup> k<sup>1.5</sup> / l</td></tr><tr><td>&nu;</td><td class="num">15.3 &times; 10<sup>-6</sup></td><td>記載なし</td></tr></tbody></table></div><p>同書の表4.2.3は<b>それ自体が自己矛盾</b>している。実測 TI を 4 % と書きながら式は 10 % を使う。Nielsen 本文は「rms 実測が 4 % という値を裏付けた」と明記。<b>一次資料を採る。</b>同書の式だと k<sub>0</sub> は 6.25 倍、&epsilon;<sub>0</sub> は 2.6 倍になる。</p><p class="good">ただし実測した結果、この違いが答えに与える影響は小さかった（RMSE の差 0.01 未満）。修正は出典の正しさとして必要だが、結論は変わらない。</p></div>
+<h2 id="h4">4. この点で一度誤ったことの記録</h2>
+<p class="capnote">本編の「3. 照合データ」より</p>
+<div class="note bad"><h4>この点で一度誤ったことの記録</h4><p>本検証では途中まで「非等温ケースには実験データが存在しない」と書いていた。<b>誤りである。</b>存在するが、Ar &asymp; 10<sup>-6</sup> で別形状（W/H = 4.7）・別 Re（7100）という、本ケースにそのまま使えない条件のものだった &mdash; というのが正しい。</p><p>しかもこの事実は<b>同書 4.2.2 項の本文に最初から書かれていた</b>:</p><p style="padding-left:1em;border-left:2px solid var(--border)">「のほか，床面に一定フラックスを与えた場合の非等温ケースの測定結果もあるが，本項では等温ケースのみに着目する．」</p><p>この「測定結果もある」が Nielsen 図11・12 を指す。手元にある一次情報と突き合わせずに「無い」と断定したのが誤りの原因である。同書が等温に絞った判断自体は妥当で、Ar = 10<sup>-6</sup>・W/H = 4.7・Re = 7100 のデータは乱流モデル 4 種の比較という同書の目的には使えない。</p></div>
+<h2 id="h5">5. 一度この結論を撤回した</h2>
+<p class="capnote">本編の「4. 解析結果および妥当性確認」より</p>
+<div class="note bad"><h4>一度この結論を撤回した</h4><p>当初これを「物理的な三次元不安定性」と結論したが、その後<b>QUICK が k と &epsilon; を負にして OpenFOAM が毎反復クリップしていた</b>ことが判明した。4000 反復に対し bounding 約 8000 回。クリッピングは非対称なノイズを注入するため、観測された対称性の破れがその産物である可能性を排除できなかった。</p></div>
+<h2 id="h6">6. 前言の訂正</h2>
+<p class="capnote">本編の「4. 解析結果および妥当性確認」より</p>
+<div class="note bad"><h4>前言の訂正</h4><p>4.2 の L1 の数値をもって「検証が成立した」と書いたのは<b>最粗格子ひとつだけを見た早計だった</b>。L2（167,400 セル、L1 の 3.4 倍）で同じ平均窓・同じ設定で回すと、噴流測線の RMSE は 0.061 &rarr; <b>0.198</b> に悪化する。</p></div>
+<h2 id="h7">7. 有界でないスキームは黙って結論を汚す</h2>
+<p class="capnote">本編の「5. 検討の過程で判明した不具合」より</p>
+<div class="note bad"><h4>有界でないスキームは黙って結論を汚す</h4><p>QUICK は有界性を保証しない。<code>bounded</code> を付けても正値性は担保されない。k や &epsilon; が負になっても OpenFOAM はクリップして <code>bounding k, min: ...</code> と出すだけで、計算は止まらず結果も出る。<b>もっともらしい結論がその上に立ってしまう。</b></p></div>
+<h2 id="h8">8. 評価指標を甘くしない</h2>
+<p class="capnote">本編の「5. 検討の過程で判明した不具合」より</p>
+<div class="note bad"><h4>評価指標を甘くしない</h4><p>実測 XLS の RMS は<b>測定誤差ではなく乱流変動の大きさ</b>である。「CFD の平均値が実験の RMS 帯に入っている」は緩い基準にすぎず、一致の根拠には使えない。報告するのは RMSE そのもの。</p></div></div></body></html>
