@@ -61,8 +61,8 @@ SOURCES = {
         "/mnt/c/Users/DZH05/claude-8/report/video/wake_D.mp4",
     "aij-caseD/video/particles_D.mp4":
         "/mnt/c/Users/DZH05/claude-8/report/video/particles_D.mp4",
-    "aij-caseD/video/tube_D.mp4":
-        "/mnt/c/Users/DZH05/claude-8/report/video/tube_D.mp4",
+    # tube_D.mp4（流管）は 2026-09-04 に報告書から外した。
+    # **点検表からも外す。**残すと「未公開」として毎回警告が出る。
 }
 
 # 残っていたら怪しい語。過去に実際やらかした型を登録していく。
