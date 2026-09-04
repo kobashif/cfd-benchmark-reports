@@ -1,0 +1,102 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IEA Annex 20 テストケース E — CFD-A20-3D-E-001 版 2.0</title>
+<meta name="description" content="IEA Annex 20 実大試験室テストケース E の非等温気流を OpenFOAM で解き、公表資料と照合した記録。">
+<style>
+:root{--ground:#EEF1F4;--paper:#FFFFFF;--sunk:#F2F5F7;--ink:#14202B;
+--muted:#55697A;--faint:#8496A3;--rule:#C9D4DC;--rule2:#8FA3B0;
+--accent:#14406B;--good:#0E6B52;--warn:#9A5B06;--bad:#95261C;
+--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-size:15px;
+line-height:1.85;font-family:-apple-system,BlinkMacSystemFont,
+"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+font-feature-settings:"palt"}
+.sheet{max-width:960px;margin:0 auto;background:var(--paper);
+padding:52px 62px 84px;box-shadow:0 1px 3px rgba(20,32,43,.10)}
+.cover{border-bottom:3px double var(--rule2);padding-bottom:30px;margin-bottom:8px}
+.cover .kind{font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;
+color:var(--accent);margin-bottom:10px}
+.cover .vol{font-size:13px;color:var(--muted);margin-bottom:16px;
+font-weight:600;letter-spacing:.04em}
+.cover h1{font-size:27px;line-height:1.45;margin:0 0 6px;font-weight:700}
+.cover .sub{font-size:16.5px;color:var(--muted);margin:0 0 26px}
+.cover dl{display:grid;grid-template-columns:8.5em 1fr;gap:3px 16px;
+font-size:13.5px;margin:0}
+.cover dt{color:var(--faint)}
+.cover dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.series{font-size:13px;color:var(--muted);border:1px solid var(--rule);
+background:var(--sunk);padding:10px 16px;margin:18px 0 0}
+.series a{color:var(--accent)}
+h2{font-size:19px;margin:44px 0 12px;padding:10px 0 8px;
+border-top:2px solid var(--rule2);border-bottom:1px solid var(--rule)}
+h3{font-size:15.5px;margin:26px 0 8px;color:var(--accent)}
+h4{font-size:14px;margin:18px 0 6px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:1.5em}
+li{margin:0 0 4px}
+nav.toc{background:var(--sunk);border:1px solid var(--rule);padding:18px 26px;
+margin:26px 0 8px;font-size:14px}
+nav.toc h2{border:none;margin:0 0 8px;padding:0;font-size:15px}
+nav.toc ol{list-style:none;padding:0;margin:0;columns:2;column-gap:34px}
+nav.toc li{margin:0 0 3px;break-inside:avoid}
+nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--rule2)}
+nav.toc a:hover{color:var(--accent)}
+.scroller{overflow-x:auto;margin:6px 0 4px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--paper)}
+th,td{border:1px solid var(--rule);padding:7px 10px;text-align:left;
+vertical-align:top}
+th{background:var(--sunk);font-weight:600;font-size:12.5px;color:var(--muted)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+tbody tr:nth-child(even){background:#FAFCFD}
+caption{caption-side:top;text-align:left;font-size:13px;color:var(--muted);
+padding:10px 0 5px;font-weight:600}
+.capnote{font-size:12.5px;color:var(--faint);margin:3px 0 20px;line-height:1.7}
+figure{margin:16px 0 22px}
+img,video{max-width:100%;height:auto;border:1px solid var(--rule);
+background:var(--paper)}
+figcaption{font-size:13px;color:var(--muted);font-weight:600;margin-top:8px}
+figcaption .n{color:var(--accent)}
+.note{border:1px solid var(--rule);border-left:4px solid var(--accent);
+background:var(--sunk);padding:13px 17px;margin:16px 0;font-size:14px}
+.note.good{border-left-color:var(--good)}
+.note.warn{border-left-color:var(--warn)}
+.note.bad{border-left-color:var(--bad)}
+.note h4{margin:0 0 6px;font-size:14px}
+.note p:last-child{margin-bottom:0}
+span.good{color:var(--good);font-weight:600}
+span.warn{color:var(--warn);font-weight:600}
+span.bad{color:var(--bad);font-weight:600}
+code{font-family:var(--mono);font-size:.9em;background:var(--sunk);
+padding:1px 4px;border-radius:2px}
+.refs{font-size:13.5px}
+.refs li{margin-bottom:7px}
+.sig{margin-top:44px;border-top:1px solid var(--rule);padding-top:14px;
+font-size:12.5px;color:var(--faint);font-family:var(--mono)}
+@media print{body{background:#fff}.sheet{box-shadow:none;max-width:none;padding:0}
+h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
+@media(max-width:760px){.sheet{padding:30px 20px 60px}nav.toc ol{columns:1}
+.cover h1{font-size:22px}}
+</style>
+</head><body><div class="wrap"><p class="capnote"><a href="index.html">← 結果のページへ戻る</a></p>
+<h1>検討の経緯</h1>
+<p class="capnote"><b>このページは結果ではない。</b>どこで誤り、どう直したかの記録である。結果は<a href="index.html">本編</a>にある。本編から切り出したもので、内容は変えていない。</p>
+<h2 id="h1">1. 吹出のモデル化と、資料間の食い違い</h2>
+<p class="capnote">本編の「1. 形状と条件」より</p>
+<div class="note warn"><h4>吹出のモデル化と、資料間の食い違い</h4><p>実物は HESCO KS 型（12 mm ノズル 84 個を 0.71 &times; 0.17 m に 4 段配置、40&deg; 上向き）。報告書 2.2.3 は複数のモデル化を挙げるが、<b>1 スロット基本モデルは全参加者が適用</b>しており、これを使えば横並びで比較できる。</p><p>ただし報告書は「有効面積は 84 ノズルと同じ」とする一方、180 &times; 62 = 0.01116 m&sup2; に対し Chen (1991) は有効面積 0.008 m&sup2;・給気 3.94 m/s とする。<b>基本モデルの寸法を優先した</b>（比較対象がそれで計算しているため）。E2 ではこれにより u<sub>0</sub> = 2.82 m/s。</p></div>
+<h2 id="h2">2. 最初の計算は、条件そのものが違っていた</h2>
+<p class="capnote">本編の「2. 吹出のモデル化 &mdash; 給気風量が 23 % 不足していた」より</p>
+<div class="note bad"><h4>最初の計算は、条件そのものが違っていた</h4><p>報告書 2.2.3 は「<b>有効面積 a と総風量 Q は 84 個のノズルと同じ</b>」とし、「<b>吹出速度と風量の両方を正確に表現することが不可欠</b>」と強調している。この有効面積は<b>ノズル軸に垂直な面積</b>である。</p><p>これを「壁面に 180 &times; 62 mm の開口を開け、大きさ 2.823 m/s のベクトルを40&deg; 傾けて与える」と実装すると、壁法線成分が cos40&deg; 倍に落ち、<b>給気風量が 0.0241 m&sup3;/s = 2.3 回/h にしかならない</b>（仕様は 0.0315 m&sup3;/s = 3.0 回/h）。鉛直壁に開ける開口は、有効面積の<b>投影</b> a/cos40&deg; に伸ばさなければならない（高さ 62 &rarr; 80.9 mm）。</p></div>
+<h2 id="h3">3. バンド構造がワイドスロットを表現できていなかった</h2>
+<p class="capnote">本編の「3. メッシュ」より</p>
+<div class="note bad"><h4>バンド構造がワイドスロットを表現できていなかった</h4><p>当初はバンドごとのセル数を <code>[14, 16, 3, 8, 3, 16, 14]</code> のように<b>7 要素の固定リスト</b>で持ち、開口は「ちょうど 1 バンド」と決め打ちしていた。これは<b>吹出スロットが吸込口より狭い間しか成り立たない</b>。</p><p>基本モデルは幅 180 mm なので &minus;90 mm は吸込の &minus;150 mm の内側にあり、スロットはちょうど 1 バンドに収まる。ところがワイドスロット（437 / 710 mm）では &minus;218.5 mm が吸込の外側に出るためスロットは<b>3 バンドにまたがる</b>。1 バンドしか拾わない実装では inlet が幅 68.5 mm の細片だけになり、<b>給気面積の 84 % が消えた</b>。68.5 mm &times; 33.9 mm = 0.002325 m&sup2; は、計算後に実測した面積と完全に一致した。</p><p>厄介なのは、この状態でも <b>blockMesh も checkMesh も通り、6000 反復が最後まで走り切る</b>ことである。セル数もアスペクト比も正常で、図を見ても違和感が無い。気づいたのは給気風量の実測値だけだった。</p><p>対策として (1) 開口は<b>複数バンドの集合</b>として扱う、(2) バンドのセル数は目標寸法から計算する（順序に依存しない）、(3) <b>生成時に各開口の面積を設計値と突き合わせ、合わなければ非ゼロ終了する</b>ようにした。この 3 番目が本質で、あとは全部その系である。</p></div>
+<h2 id="h4">4. 熱収支は「合格」したが、条件が違っていた</h2>
+<p class="capnote">本編の「4. 検証」より</p>
+<div class="note warn"><h4>熱収支は「合格」したが、条件が違っていた</h4><p>報告書は case E について「室温は 20 〜 22 &deg;C 程度になる」と述べている。風量が 23 % 不足していた最初の計算でも、排気温度は <b>20.60 &deg;C</b> でこの範囲に収まり、質量収支の誤差も 0.06 〜 0.09 % だった。当初はこれを「形状と境界条件の実装が正しいことの傍証」と書いた。<b>誤りだった。</b></p><p>風量が違っても、<b>その風量なりに自己整合な解</b>が出る。壁は固定温度なので、風量が減れば壁からの受熱も減り、温度差は素直には広がらない。熱収支は<b>境界条件が仕様どおりであることの検算にはならない</b>。検算になったのは空気齢のほうだった（前節）。</p><p>修正後の排気温度は 20.5 &deg;C 前後で、やはり 20 〜 22 &deg;C に収まる。<b>この指標は両方の条件で合格するので、識別力が無い。</b></p></div>
+<h2 id="h5">5. 判定指標を二度間違えた記録</h2>
+<p class="capnote">本編の「4. 検証」より</p>
+<div class="note bad"><h4>判定指標を二度間違えた記録</h4><p>最初の自動判定では 3 項目中 2 項目を「不合格」と報告した。<b>誤りだった。</b></p><ul><li><b>速度</b>: 報告書は E1 で「<b>噴流域の</b>居住域速度は 0.2 〜 0.3 m/s」と書いている。E2 の 0.1 〜 0.2 も噴流が入り込む領域の値であって室平均ではない。室平均 0.027 m/s と比べて「4 〜 7 倍遅い」としたのが誤りで、噴流域の最大 0.175 m/s は帯に入る</li><li><b>剥離位置</b>: 「天井から 0.23 m の帯で U<sub>x</sub> の符号反転」を探しており、薄い噴流の先端を拾えていなかった</li></ul><p><b>場の図を先に見るべきだった。</b>自動判定を書いてから絵を見る順序が逆で、指標の妥当性を確かめずに結論を出した。</p></div>
+<h2 id="h6">6. 訂正：この結論は一度誤って「効果なし」と報告した</h2>
+<p class="capnote">本編の「6. 浮力生成項 &mdash; これだけが剥離を動かした」より</p>
+<div class="note bad"><h4>訂正：この結論は一度誤って「効果なし」と報告した</h4><p>最初にこの計算を評価したとき、剥離位置は 3 構成とも「1.00 L（剥離せず）」と出た。<b>判定スクリプトのバグだった。</b></p><p>剥離検出は各 x 断面を走査するのだが、走査する x の一覧を <code>np.round(x, 3)</code> で丸めて作り、それを<b>丸めていない生の x と 1e-6 の許容差で照合</b>していた。結果、厳密に一致する x = 4.20 m（窓壁）以外のほぼ全断面が捨てられ、どのケースも判で押したように「1.00 L」「50 % 減衰 0.35 L」を返していた。同じ照合方法は、その前の速度ベースの検出器にも入っていた。</p><p>気づいたのは<b>場の図を見たとき</b>である。E1 の温度場にはx = 3 m 付近で冷気が床まで落ちる舌がはっきり写っており、「剥離せず」という判定と明らかに矛盾していた。生データを直接読み直して 0.64 L が正しいことを確認し、指標そのものも「上半分の最大速度の高さ」から<b>「各 x での温度最小点の高さ」＝給気そのものの居場所</b>を追う方式に変えた。閾値もバンド幅もなく、報告書の等温線図と直接比べられる。</p><p>この量で判定を誤ったのは 3 度目だった。<b>自動判定を書いたら、結論を出す前に必ず場の図と突き合わせる。</b></p></div></div></body></html>

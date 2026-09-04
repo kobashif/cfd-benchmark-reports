@@ -1,0 +1,81 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIJ ケース D 風環境 CFD 解析報告書 — CFD-AIJ-D-001 版 1.0</title>
+<meta name="description" content="AIJ 風環境ベンチマーク ケース D（高層棟＋低層街区）の定常 RANS 解析と風洞実験との照合。2 種の測器による測定量の検証を含む">
+<style>
+:root{--ground:#EEF1F4;--paper:#FFFFFF;--sunk:#F2F5F7;--ink:#14202B;
+--muted:#55697A;--faint:#8496A3;--rule:#C9D4DC;--rule2:#8FA3B0;
+--accent:#14406B;--good:#0E6B52;--warn:#9A5B06;--bad:#95261C;
+--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-size:15px;
+line-height:1.85;font-family:-apple-system,BlinkMacSystemFont,
+"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+font-feature-settings:"palt"}
+.sheet{max-width:960px;margin:0 auto;background:var(--paper);
+padding:52px 62px 84px;box-shadow:0 1px 3px rgba(20,32,43,.10)}
+.cover{border-bottom:3px double var(--rule2);padding-bottom:30px;margin-bottom:8px}
+.cover .kind{font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;
+color:var(--accent);margin-bottom:26px}
+.cover h1{font-size:27px;line-height:1.45;margin:0 0 6px;font-weight:700}
+.cover .sub{font-size:16.5px;color:var(--muted);margin:0 0 26px}
+.cover dl{display:grid;grid-template-columns:8.5em 1fr;gap:3px 16px;
+font-size:13.5px;margin:0}
+.cover dt{color:var(--faint)}
+.cover dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums}
+h2{font-size:19px;margin:44px 0 12px;padding:10px 0 8px;
+border-top:2px solid var(--rule2);border-bottom:1px solid var(--rule)}
+h3{font-size:15.5px;margin:26px 0 8px;color:var(--accent)}
+h4{font-size:14px;margin:18px 0 6px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:1.5em}
+li{margin:0 0 4px}
+nav.toc{background:var(--sunk);border:1px solid var(--rule);padding:18px 26px;
+margin:26px 0 8px;font-size:14px}
+nav.toc h2{border:none;margin:0 0 8px;padding:0;font-size:15px}
+nav.toc ol{list-style:none;padding:0;margin:0;columns:2;column-gap:34px}
+nav.toc li{margin:0 0 3px;break-inside:avoid}
+nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--rule2)}
+nav.toc a:hover{color:var(--accent)}
+.scroller{overflow-x:auto;margin:6px 0 4px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--paper)}
+th,td{border:1px solid var(--rule);padding:7px 10px;text-align:left;
+vertical-align:top}
+th{background:var(--sunk);font-weight:600;font-size:12.5px;color:var(--muted)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+tbody tr:nth-child(even){background:#FAFCFD}
+caption{caption-side:top;text-align:left;font-size:13px;color:var(--muted);
+padding:10px 0 5px;font-weight:600}
+.capnote{font-size:12.5px;color:var(--faint);margin:3px 0 20px;line-height:1.7}
+figure{margin:16px 0 22px}
+img{max-width:100%;height:auto;border:1px solid var(--rule);background:var(--paper)}
+figcaption{font-size:13px;color:var(--muted);font-weight:600;margin-top:8px}
+figcaption .n{color:var(--accent)}
+.note{border:1px solid var(--rule);border-left:4px solid var(--accent);
+background:var(--sunk);padding:13px 17px;margin:16px 0;font-size:14px}
+.note.good{border-left-color:var(--good)}
+.note.warn{border-left-color:var(--warn)}
+.note.bad{border-left-color:var(--bad)}
+.note h4{margin:0 0 6px;font-size:14px}
+.note p:last-child{margin-bottom:0}
+span.good{color:var(--good);font-weight:600}
+span.warn{color:var(--warn);font-weight:600}
+span.bad{color:var(--bad);font-weight:600}
+code{font-family:var(--mono);font-size:.9em;background:var(--sunk);
+padding:1px 4px;border-radius:2px}
+.refs{font-size:13.5px}
+.refs li{margin-bottom:7px}
+.sig{margin-top:44px;border-top:1px solid var(--rule);padding-top:14px;
+font-size:12.5px;color:var(--faint);font-family:var(--mono)}
+@media print{body{background:#fff}.sheet{box-shadow:none;max-width:none;padding:0}
+h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
+@media(max-width:760px){.sheet{padding:30px 20px 60px}nav.toc ol{columns:1}
+.cover h1{font-size:22px}}
+</style>
+</head><body><div class="wrap"><p class="capnote"><a href="index.html">← 結果のページへ戻る</a></p>
+<h1>検討の経緯</h1>
+<p class="capnote"><b>このページは結果ではない。</b>どこで誤り、どう直したかの記録である。結果は<a href="index.html">本編</a>にある。本編から切り出したもので、内容は変えていない。</p>
+<h2 id="h1">1. 訂正 — 「適している」という見通しは、他ケースで試して否定された</h2>
+<p class="capnote">本編の「7. 非定常解析の適用性」より</p>
+<div class="note bad"><h4>訂正 — 「適している」という見通しは、他ケースで試して否定された</h4><p>版 1.0 の本節は「手法としては SST-SAS が本ケースに適している」と述べていた。<b>その後ケース C（3&times;3 街区）とケース A（1:1:2 単体角柱）で実際に回したところ、どちらも実測との一致は悪化した。</b>本節の見通しはここで訂正する。</p><p><b>何が起きたか。</b>ケース C では変動が維持された（基準風速の 7.4 %）。しかし解像したのは後流の上部だけで、<b>評価高さでは半数の点が 0.1 % にも満たなかった。</b>AIJ ベンチマークが測るのは地表付近であり、解像した分が検証対象の量に届かない。ケース A では解像割合が最大でも 3.5 % にとどまり、渦粘性だけが下がった結果、<b>全点 RMSE が 0.173 から 0.411 へ、偏りが &minus;0.082 から +0.334 へ悪化した。</b></p><p><b>上の表の「破綻しない」は誤りではないが、誤解を招く。</b>破綻はしない。しかし<b>解像するとは限らない。</b>ケース A は積分長あたり 11 セルあっても解像分が立たなかった。<b>格子の解像度から事前に判定できるという前提そのものが外れていた。</b>回して解像割合を測るまで分からない。</p><p>詳細はケース C 報告書 7.2 節およびケース A 報告書 7.2 節。</p><p><b>本ケースでは実施していない。</b>他ケースの結果を踏まえると、本ケースで回しても<b>評価高さの精度が上がる見込みは薄い。</b>行うとすれば、目的は「精度を上げること」ではなく<b>「後流上部の非定常性を見ること」</b>に限られる。その場合も、流出まで 5.0 H では後流が発達する前に境界に達するため（2.2 節）、領域を指針どおりに直した格子を先に用意する。</p><p><b>当初の見積りは 2 点で誤っていた。</b>(1) 時間刻みを「最小セル × 最大速度」で求め、1.5 倍きつく出した。最小セルは地表にあり、そこは速度が小さい。(2) 積分長を測る前に「実市街地並みの格子が要る」と決めつけていた。実測すると積分長は棟幅とほぼ同じで、格子はほぼ足りていた。<b>数えるべきものを数える前に結論を出していた。</b></p></div></div></body></html>

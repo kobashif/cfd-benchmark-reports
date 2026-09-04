@@ -38,6 +38,13 @@ SOURCES = {
         "/mnt/c/Users/DZH05/claude-2/crossvent-benchmark/videos.html",
     # **ケース B が抜けていた。**
     "aij-caseB/index.html": "/mnt/c/Users/DZH05/claude-5/report/index_B.html",
+    # 結果と経緯を分けた（2026-09-05）。**経緯のページも点検の網に入れる。**
+    # 網から漏れているものは、点検が無いのと同じ。
+    "aij-caseA/history.html": "/mnt/c/Users/DZH05/claude-5/report/history_A.html",
+    "aij-caseB/history.html": "/mnt/c/Users/DZH05/claude-5/report/history_B.html",
+    "aij-caseD/history.html": "/mnt/c/Users/DZH05/claude-8/report/history_D.html",
+    "annex20-2d/history.html": "/mnt/c/Users/DZH05/claude-3/report/history.html",
+    "annex20-caseE/history.html": "/mnt/c/Users/DZH05/claude-4/report/history.html",
     "aij-caseB/conditions_B.html":
         "/mnt/c/Users/DZH05/claude-5/report/conditions_B.html",
     "aij-caseC/index.html": "/mnt/c/Users/DZH05/claude-6/report/index_C.html",
