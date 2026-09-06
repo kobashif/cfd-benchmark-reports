@@ -165,6 +165,8 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
         <tr><td>アルゴリズム</td><td>SIMPLE</td><td>SIMPLEC</td></tr>
         <tr><td>由来</td><td>書籍 4.5 節の記載に準拠</td>
         <td>市販ソフト Flow Designer の既定値</td></tr>
+        <tr><td>その既定値の狙い</td><td>&mdash;</td>
+        <td>安定して速く解けること（実務の設計検討向け）</td></tr>
       </tbody>
     </table>
   </div>
@@ -174,11 +176,33 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
     <code>atmOmegaWallFunction</code> → <code>atmEpsilonWallFunction</code> と
     一対一に対応させた。
   </p>
+  <p class="note">
+    <strong>壁関数の適合も、屋根の剥離が消えたことに関わっている可能性がある。</strong>
+    標準 k-ε は壁近傍を高 Re 型の壁関数に頼る。壁面第 1 セルの中心が
+    対数則の層から外れていると、壁面せん断応力が実際と食い違い、
+    剥離の起点がずれる。本検証は壁面を &delta; = H/60 に細分しており
+    （第 1 セル中心 0.00125 m）、<strong>k-ω SST でも標準 k-ε でも同じ格子を
+    使っている。</strong>したがって両者の差に格子の差は入っていないが、
+    <strong>同じ格子でも、モデルによって適合する y<sup>+</sup> の範囲は違う。</strong>
+    <strong>ただし y<sup>+</sup> を記録していないため、この寄与は切り分けられていない。</strong>
+    本文が分離できたのは「乱流モデル」と「対流項の離散化」の 2 つまでである。
+  </p>
   <p>
     A と B は乱流モデルと離散化を同時に変えているため、これだけでは
     観測された差をどちらに帰属させるか確定できない。
     そこで残る 2 つの組み合わせも計算し、2 × 2 で分離した（§7）。
     なお SIMPLE と SIMPLEC は収束解を変えないので、精度の比較では交絡しない。
+  </p>
+  <p class="note">
+    <strong>なぜ A だけ SIMPLE なのか。</strong>A は書籍 4.5 節の記載に、
+    B は市販ソフトの既定値にそれぞれ準拠させたためで、
+    <strong>こちらで選んだ組み合わせではない。</strong>
+    2 &times; 2 の残り 2 ケースを足したのは、この非対称を消すためである。
+    到達状態を見ると、A（SIMPLE）も C（SIMPLEC）も 20,000 反復で
+    <code>residualControl</code> に達していない。
+    <strong>アルゴリズムを替えても未達である。</strong>
+    そのうえで通風量は監視量として落ち着いており（&sect;3）、
+    <strong>アルゴリズムの別は到達状態にも報告値にも効いていない。</strong>
   </p>
   <div class="scroller">
     <table><caption>表 3　2 &times; 2 の 4 ケースと、それぞれの反復数および収束の達成状況</caption>
@@ -332,6 +356,12 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
       これは立方体まわりの実験でよく知られた構造である。
       B では屋根上に逆流セルが 1 つも存在しない。流れが前縁で剥離せず、
       屋根面に付着したまま流れている。
+      <strong>この違いは図でも確かめられる</strong>&mdash;
+      <a href="grid-convergence.html#s5">第 1 編 &sect;5「流れ場の検証」</a>の
+      y/H = 0 鉛直断面（図 2）に屋根前縁の剥離泡が写っており、
+      <a href="videos.html">第 3 編の動画</a>では流線が屋根面に沿って
+      張り付いていく様子を追える。
+      <strong>数（逆流セル 497 対 0）と図は同じことを言っている。</strong>
     </p>
     <p>
       建物前面のスタンディング渦も、到達距離が 0.93H → 0.53H、

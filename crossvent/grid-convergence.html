@@ -148,7 +148,15 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
     </p>
     <p>
       一方、この局所細分の格子族では見かけの収束次数が <strong>0.17</strong> にとどまり、
-      解は漸近域に入らなかった。そこで格子生成器の長さスケールをすべて同じ倍率で
+      解は漸近域に入らなかった。
+      <strong>壁面だけを細分すると、壁関数の当たり方が格子ごとに変わる。</strong>
+      第 1 セルの厚さを半分にすれば、その中心が対数則の層のどこに来るかも変わり、
+      壁面せん断応力の出方が格子ごとに違ってくる。
+      <strong>「同じ解を細かい格子で近似している」という外挿の前提が崩れる。</strong>
+      幾何相似な格子族に作り直したのはこのためで、そちらでは次数 1.607 と
+      単調収束が得られている。
+      <strong>ただし y<sup>+</sup> を記録していないため、これは説明であって、
+      測って確かめたことではない。</strong>そこで格子生成器の長さスケールをすべて同じ倍率で
       スケールした<strong>幾何相似な格子族</strong>（560,500 / 174,048 / 66,528 セル、
       細分比 1.48 / 1.38）を作り直したところ、<strong>見かけの次数は 1.607</strong> となり
       単調収束が得られた。<strong>残存する格子依存性は GCI で 1.5 〜 3.7%</strong> である。
@@ -248,8 +256,18 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
       のみとなった。</strong>
       角柱の基底圧は渦放出によって決まるが、定常解析はこれを平均化して消すため、
       基底負圧を系統的に過小評価することが知られている。
+      <strong>この性質は既往の比較研究で繰り返し報告されている。</strong>
+      Rodi (1997) は角柱まわりで LES と RANS を並べ、
+      <strong>定常 RANS が渦放出を捉えられず後流の負圧を過小に出すのに対し、
+      LES は実測に近づく</strong>ことを示している
+      （<i>J. Wind Eng. Ind. Aerodyn.</i> 69&ndash;71, 55&ndash;75、
+      <a href="https://doi.org/10.1016/S0167-6105(97)00147-5">doi:10.1016/S0167-6105(97)00147-5</a>）。
+      Murakami (1993) も乱流モデルを揃えて比べ、同じ傾向を報告している
+      （<i>J. Wind Eng. Ind. Aerodyn.</i> 46&ndash;47, 21&ndash;36、
+      <a href="https://doi.org/10.1016/0167-6105(93)90112-2">doi:10.1016/0167-6105(93)90112-2</a>）。
       書籍自身の CFD 4 モデルも実験から −5 〜 −30% 外れており、
       定常 RANS でこのベンチマークを解いた場合の一般的な精度帯である。
+      <strong>本検証の乖離は、この既知の限界の範囲に収まっている。</strong>
     </p>
   </div>
 </section>
@@ -322,7 +340,8 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
         <tr><td>流入プロファイル</td><td class="num">鉛直 52 点の <code>fixedProfile</code>（風洞実測に基づく）</td></tr>
         <tr><td>風向</td><td class="num">0° / 22.5° / 45° / 67.5°（水平風速の大きさは 4 ケースで保存）</td></tr>
         <tr><td>乱流モデル</td><td class="num">k-ω SST</td></tr>
-        <tr><td>壁面処理</td><td class="num"><code>nutkWallFunction</code> / <code>omegaWallFunction</code></td></tr>
+        <tr><td>壁面処理</td><td class="num">建物 <code>nutkWallFunction</code> / <code>omegaWallFunction</code>、地表 <code>atmNutkWallFunction</code> / <code>atmOmegaWallFunction</code>（z<sub>0</sub> = 3.9&times;10<sup>&minus;4</sup> m）</td></tr>
+        <tr><td>壁面第 1 セル</td><td class="num">目標厚さ &delta; = H/60 = 0.0025 m（第 1 セル中心 0.00125 m）。<strong>y<sup>+</sup> は記録していない</strong></td></tr>
         <tr><td>対流項</td><td class="num">bounded Gauss QUICK（k・ω は limitedLinear 1）</td></tr>
         <tr><td>圧力の解法</td><td class="num">PCG + DIC、非直交補正 1 回</td></tr>
         <tr><td>緩和係数</td><td class="num">p 0.2 / U 0.5 / k 0.4 / ω 0.4</td></tr>
@@ -330,6 +349,17 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
       </tbody>
     </table>
   </div>
+  <p class="note">
+    <strong>壁面は壁関数で扱っている。</strong>低 Re 型で壁まで解いてはいない。
+    k-ω SST は壁関数と低 Re の両方を扱えるが、本検証は
+    <code>nutkWallFunction</code> / <code>omegaWallFunction</code> を用いており、
+    第 1 セル中心が対数則の層に入っていることが前提になる。
+    <strong>ただし y<sup>+</sup> を記録していない。</strong>
+    計算時に <code>yPlus</code> の出力を有効にしておらず、
+    場を残していないため後から測ることもできない。
+    <strong>再現性のために、幾何的な値（&delta; = H/60、第 1 セル中心 0.00125 m）と
+    壁関数の型だけを示す。</strong>y<sup>+</sup> の分布は次に回すときに記録する。
+  </p>
   <p>
     緩和係数は既往解と同一である。標準値（p 0.3 / U 0.7 / k・ω 0.5）に戻せる可能性はあるが、
     格子収束の比較を目的とするため条件を揃えた。
