@@ -45,6 +45,9 @@ SOURCES = {
     "aij-caseD/history.html": "/mnt/c/Users/DZH05/claude-8/report/history_D.html",
     "annex20-2d/history.html": "/mnt/c/Users/DZH05/claude-3/report/history.html",
     "annex20-caseE/history.html": "/mnt/c/Users/DZH05/claude-4/report/history.html",
+    # 2026-09-06 に新設した 2 本。**網に入れないと点検が無いのと同じ。**
+    "aij-caseC/history.html": "/mnt/c/Users/DZH05/claude-6/report/history_C.html",
+    "aij-caseF/history.html": "/mnt/c/Users/DZH05/claude-10/report/history_F.html",
     "aij-caseB/conditions_B.html":
         "/mnt/c/Users/DZH05/claude-5/report/conditions_B.html",
     "aij-caseC/index.html": "/mnt/c/Users/DZH05/claude-6/report/index_C.html",
@@ -88,6 +91,10 @@ STALE_CHECKS = [
     ("実行中", "公開時点で実行中だったものが、そのまま固定されていないか"),
     ("TODO", "書きかけが残っていないか"),
     ("lorem", "仮テキストが残っていないか"),
+    # **否定形の呼び名を使わない。**「未収束」は「判定が発火しなかった」と
+    # 「解が落ち着いていない」を混ぜている。何が起きたかで書く
+    # （打ち切り解 / 残差は頭打ち / 報告する量は定常）。開示は落とさない
+    ("未収束", "「打ち切り解」など、何が起きたかで書く"),
     # **08-31 に踏んだもの。**9 条件とも回し終わったのに
     # 3.1.3 節は「範囲外とする」のまま公開していた。
     ("本報告の範囲外とする", "やった作業が「範囲外」のまま残っていないか"),
