@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>検証指標の考え方 RMSE と R² だけでは足りない場面 — CFD-METRICS-001 版 1.0</title>
+<meta name="description" content="RMSE と R² だけでは足りない場面の扱い。hit rate（VDI 3783/9・COST 732）の導入と、測点を除いてよい条件">
+<style>
+:root{--ground:#EEF1F4;--paper:#FFFFFF;--sunk:#F2F5F7;--ink:#14202B;
+--muted:#55697A;--faint:#8496A3;--rule:#C9D4DC;--rule2:#8FA3B0;
+--accent:#14406B;--good:#0E6B52;--warn:#9A5B06;--bad:#95261C;
+--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-size:15px;
+line-height:1.85;font-family:-apple-system,BlinkMacSystemFont,
+"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+font-feature-settings:"palt"}
+.sheet{max-width:960px;margin:0 auto;background:var(--paper);
+padding:52px 62px 84px;box-shadow:0 1px 3px rgba(20,32,43,.10)}
+.cover{border-bottom:3px double var(--rule2);padding-bottom:30px;margin-bottom:8px}
+.cover .kind{font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;
+color:var(--accent);margin-bottom:10px}
+.cover .vol{font-size:13px;color:var(--muted);margin-bottom:16px;
+font-weight:600;letter-spacing:.04em}
+.cover h1{font-size:27px;line-height:1.45;margin:0 0 6px;font-weight:700}
+.cover .sub{font-size:16.5px;color:var(--muted);margin:0 0 26px}
+.cover dl{display:grid;grid-template-columns:8.5em 1fr;gap:3px 16px;
+font-size:13.5px;margin:0}
+.cover dt{color:var(--faint)}
+.cover dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.series{font-size:13px;color:var(--muted);border:1px solid var(--rule);
+background:var(--sunk);padding:10px 16px;margin:18px 0 0}
+.series a{color:var(--accent)}
+h2{font-size:19px;margin:44px 0 12px;padding:10px 0 8px;
+border-top:2px solid var(--rule2);border-bottom:1px solid var(--rule)}
+h3{font-size:15.5px;margin:26px 0 8px;color:var(--accent)}
+h4{font-size:14px;margin:18px 0 6px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:1.5em}
+li{margin:0 0 4px}
+nav.toc{background:var(--sunk);border:1px solid var(--rule);padding:18px 26px;
+margin:26px 0 8px;font-size:14px}
+nav.toc h2{border:none;margin:0 0 8px;padding:0;font-size:15px}
+nav.toc ol{list-style:none;padding:0;margin:0;columns:2;column-gap:34px}
+nav.toc li{margin:0 0 3px;break-inside:avoid}
+nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--rule2)}
+nav.toc a:hover{color:var(--accent)}
+.scroller{overflow-x:auto;margin:6px 0 4px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--paper)}
+th,td{border:1px solid var(--rule);padding:7px 10px;text-align:left;
+vertical-align:top}
+th{background:var(--sunk);font-weight:600;font-size:12.5px;color:var(--muted)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+tbody tr:nth-child(even){background:#FAFCFD}
+caption{caption-side:top;text-align:left;font-size:13px;color:var(--muted);
+padding:10px 0 5px;font-weight:600}
+.capnote{font-size:12.5px;color:var(--faint);margin:3px 0 20px;line-height:1.7}
+figure{margin:16px 0 22px}
+img,video{max-width:100%;height:auto;border:1px solid var(--rule);
+background:var(--paper)}
+figcaption{font-size:13px;color:var(--muted);font-weight:600;margin-top:8px}
+figcaption .n{color:var(--accent)}
+.note{border:1px solid var(--rule);border-left:4px solid var(--accent);
+background:var(--sunk);padding:13px 17px;margin:16px 0;font-size:14px}
+.note.good{border-left-color:var(--good)}
+.note.warn{border-left-color:var(--warn)}
+.note.bad{border-left-color:var(--bad)}
+.note h4{margin:0 0 6px;font-size:14px}
+.note p:last-child{margin-bottom:0}
+span.good{color:var(--good);font-weight:600}
+span.warn{color:var(--warn);font-weight:600}
+span.bad{color:var(--bad);font-weight:600}
+code{font-family:var(--mono);font-size:.9em;background:var(--sunk);
+padding:1px 4px;border-radius:2px}
+.refs{font-size:13.5px}
+.refs li{margin-bottom:7px}
+.sig{margin-top:44px;border-top:1px solid var(--rule);padding-top:14px;
+font-size:12.5px;color:var(--faint);font-family:var(--mono)}
+@media print{body{background:#fff}.sheet{box-shadow:none;max-width:none;padding:0}
+h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
+@media(max-width:760px){.sheet{padding:30px 20px 60px}nav.toc ol{columns:1}
+.cover h1{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="sheet">
+<div class="cover">
+<div class="kind">数値流体解析 報告書 / CFD ANALYSIS REPORT</div>
+<h1>検証指標の考え方<br>RMSE と R² だけでは足りない場面</h1>
+<p class="sub">実測値の小さい点・測定の不確かな点をどう扱うか。hit rate（VDI 3783/9・COST Action 732）の導入と、測点を除いてよい条件</p>
+<dl><dt>文書番号</dt><dd>CFD-METRICS-001</dd><dt>版数</dt><dd>1.0</dd><dt>発行日</dt><dd>2026-09-06</dd><dt>適用範囲</dt><dd>本サイトの全ベンチマーク報告書に共通</dd><dt>参照元</dt><dd>各報告書の妥当性確認の章から参照される</dd><dt>題材</dt><dd>AIJ ケース F（新宿・実市街地）の実測と計算</dd></dl>
+<div class="series"><b>本報告書はシリーズの一編です。</b> 本編は個別のケースに属さない共通の編である</div>
+</div>
+<div class="scroller"><table><caption>表 1　改訂履歴</caption><thead><tr><th>版</th><th>日付</th><th>改訂内容</th></tr></thead><tbody><tr><td class="num">1.0</td><td class="num">2026-09-06</td><td>初版。hit rate の導入、W の決め方、測点を除いてよい条件、ケース F 東風向の実例</td></tr></tbody></table></div>
+<nav class="toc"><h2>目次</h2><ol><li><a href="#s1">1. R² は「どの定義か」を書かずに使わない</a></li><li><a href="#s2">2. 問題</a></li><li><a href="#s3">3. hit rate の定義</a></li><li><a href="#s4">4. W をどう決めるか</a></li><li><a href="#s5">5. 測点を除いてよい条件</a></li><li><a href="#s6">6. 実例 — ケース F 東風向の 1 点</a></li><li><a href="#s7">7. 本サイトでの報告の仕方</a></li><li><a href="#s8">8. 参考文献</a></li><li><a href="#s__">付録　図表一覧</a></li></ol></nav>
+<h2 id="s1">1. R² は「どの定義か」を書かずに使わない</h2>
+<p>同じ「決定係数」という語が、少なくとも 2 つの別の量を指す。<b>分母が違う。</b></p>
+<div class="scroller"><table><caption>表 2　2 つの決定係数</caption><thead><tr><th>呼び方</th><th>式</th><th>分母</th><th>負のときの意味</th></tr></thead><tbody><tr><td>ガイドブック型（原点通過回帰）</td><td>1 − Σ(y−ax)² / Σ(y−ȳ)²　　a = Σxy/Σx²</td><td><b>計算値</b> y の分散</td><td>原点を通る比例関係が、計算値のばらつきを計算値の平均以下にしか説明できない</td></tr><tr><td>1:1 型（Nash–Sutcliffe）</td><td>1 − Σ(y−x)² / Σ(x−x̄)²</td><td><b>実測値</b> x の分散</td><td>実測の平均を答えにした方がまだ当たる</td></tr></tbody></table></div><p class="capnote">x = 実測、y = 計算。<b>本サイトの報告書はガイドブック型を用いている</b>（AIJ ガイドブック 5.2 と同じ形）。</p>
+<div class="scroller"><table><caption>表 3　同じ計算・同じ実測でも、定義が変われば値も符号も変わる（ケース F）</caption><thead><tr><th>風向</th><th>測器</th><th>ガイドブック型</th><th>1:1 型</th><th>符号</th></tr></thead><tbody><tr><td class="num">E</td><td>現地</td><td class="num">+0.103</td><td class="num">-0.818</td><td><b>逆転</b></td></tr><tr><td>ENE</td><td>風洞</td><td class="num">+0.141</td><td class="num">-0.693</td><td><b>逆転</b></td></tr><tr><td>N</td><td>風洞</td><td class="num">+0.171</td><td class="num">+0.203</td><td class="num"></td></tr><tr><td>NNE</td><td>風洞</td><td class="num">+0.453</td><td class="num">+0.591</td><td class="num"></td></tr><tr><td>NNW</td><td>風洞</td><td class="num">+0.697</td><td class="num">+0.684</td><td class="num"></td></tr><tr><td>S</td><td>風洞</td><td class="num">+0.390</td><td class="num">-1.311</td><td><b>逆転</b></td></tr><tr><td>SSW</td><td>風洞</td><td class="num">+0.103</td><td class="num">-1.036</td><td><b>逆転</b></td></tr><tr><td>SW</td><td>風洞</td><td class="num">+0.680</td><td class="num">+0.361</td><td class="num"></td></tr><tr><td>W</td><td>現地</td><td class="num">+0.227</td><td class="num">-1.420</td><td><b>逆転</b></td></tr></tbody></table></div><p class="capnote"><b>正負が逆転する風向がある。</b>「決定係数が正だから当たっている」とは言えない。<b>報告書には式そのものを書く。</b></p>
+<div class="note "><h4>この取り違えを実際にやった</h4>公開済みの報告書に「決定係数 −0.22 は負であり、実測の平均値を返すより当たらない」と書いたが、用いていたのはガイドブック型で、その説明は 1:1 型のものだった。<b>数値は正しく、説明文だけが定義に合っていなかった。</b>2026-09-06 に訂正した。</div>
+<h2 id="s2">2. 問題</h2>
+<p>RMSE と R² は<b>全点を同じ重みで足す。</b>したがって<b>実測値の小さい点と、測定そのものが不確かな点が結果を支配する。</b>その 2 つは実務でしばしば同じ点である。風速の小さい場所は測るのが難しい。</p>
+<p>ケース F の現地観測を例にとる。データセットは測点ごとにばらつき <code>sigma_U/R</code> を持っており、その中央値は<b>0.094</b> である。実測値の中央値が 0.250 なので、<b>測定のばらつきが値の 3 割を超える。</b>この上に RMSE を当てると、測れていない量を当てにいくことになる。</p>
+<div class="scroller"><table><caption>表 4　R² と hit rate は同じ順位を与えない（ケース F・風向ごと）</caption><thead><tr><th>風向</th><th>R²</th><th>R² の測器</th><th>hit rate（W = 0.06 / σ）</th><th>備考</th></tr></thead><tbody><tr><td>N</td><td class="num">+0.171</td><td>風洞</td><td>風洞 q = 0.45</td><td class="num"></td></tr><tr><td>NNE</td><td class="num">+0.453</td><td>風洞</td><td>風洞 q = 0.63</td><td class="num"></td></tr><tr><td>ENE</td><td class="num">+0.141</td><td>風洞</td><td>風洞 q = 0.30</td><td class="num"></td></tr><tr><td class="num">E</td><td class="num">+0.103</td><td>現地</td><td>現地 q = 0.69</td><td><b>食い違う</b></td></tr><tr><td>S</td><td class="num">+0.390</td><td>風洞</td><td>風洞 q = 0.48</td><td class="num"></td></tr><tr><td>SSW</td><td class="num">+0.103</td><td>風洞</td><td>風洞 q = 0.43</td><td class="num"></td></tr><tr><td>SW</td><td class="num">+0.680</td><td>風洞</td><td>風洞 q = 0.59</td><td><b>食い違う</b></td></tr><tr><td>W</td><td class="num">+0.227</td><td>現地</td><td>現地 q = 0.62</td><td class="num"></td></tr><tr><td>NNW</td><td class="num">+0.697</td><td>風洞</td><td>風洞 q = 0.76</td><td class="num"></td></tr></tbody></table></div><p class="capnote">R² は 0.5 以上を「良い」、hit rate は 0.66 以上を「合格」として食い違いを印した。<b>後者は規格の目安、前者は当方が決めた値である。</b><br><b>2 つの指標は逆向きにも食い違う。</b>東（E）は R² が低い（+0.103）のに hit rate は 0.69 で合格し、南西（SW）は R² が高い（+0.680）のに hit rate は 0.59 で届かない。R² は点の並び方を、hit rate は点ごとの外れ方を見ている。<b>別のことを測っている。</b></p>
+<h2 id="s3">3. hit rate の定義</h2>
+<p>欧州の微気象モデル評価では、点ごとに<b>2 つの許容幅のどちらか</b>を満たせば「当たり」と数える。</p>
+<p class="note" style="font-family:var(--mono)">当たり ⟺ |M − O| ≤ W　<b>または</b>　|M − O| / |O| ≤ D</p>
+<div class="scroller"><table><caption>表 5　記号</caption><thead><tr><th>記号</th><th>意味</th><th>本サイトで用いる値</th></tr></thead><tbody><tr><td>M</td><td>計算値</td><td class="num">—</td></tr><tr><td>O</td><td>実測値</td><td class="num">—</td></tr><tr><td>W</td><td>許容する絶対偏差（測定誤差の大きさ）</td><td>3 章</td></tr><tr><td>D</td><td>許容する相対偏差</td><td class="num">0.25</td></tr><tr><td>q</td><td>当たりの割合（hit rate）</td><td>合格の目安 0.66 以上</td></tr></tbody></table></div><p class="capnote">D = 0.25 と q ≥ 0.66 は VDI 3783 Blatt 9 および COST Action 732 による。</p>
+<p><b>W が実測値の小さい点を救う。</b>相対誤差がどれだけ大きくても、絶対差が測定誤差の中なら当たりになる。<b>点を消さずに、重みだけが下がる。</b>これが「重要でない点を無視してよいか」という問いに対する、規格の側の答えである。<b>無視するのではなく、許容幅を二本立てにする。</b></p>
+<h2 id="s4">4. W をどう決めるか</h2>
+<p><b>規格は変数ごとに W を定めているが、規格本体は有償であり、本サイトでは値を確認していない。したがって推測で置かない。</b>代わりに次の 2 通りとし、読み手が自分の W で読み替えられるようにする。</p>
+<ul><li><b>測定のばらつきが公表されている場合</b>——それをそのまま W にする。ケース F の現地観測は測点ごとに <code>sigma_U/R</code> を持つので、点ごとの W として使う。<b>最も根拠が明確である。</b></li><li><b>公表されていない場合</b>——W を振って q の動きを示す。単一の値を選ばない。</li></ul>
+<div class="scroller"><table><caption>表 6　W を振ったときの hit rate（例: ケース F 風向 N・風洞 22 点）</caption><thead><tr><th>W</th><th>0.00</th><th>0.02</th><th>0.04</th><th>0.06</th><th>0.08</th><th>0.10</th><th>0.12</th></tr></thead><tbody><tr><td>q</td><td class="num">0.41</td><td class="num">0.41</td><td class="num">0.45</td><td class="num">0.45</td><td class="num">0.45</td><td class="num">0.68</td><td class="num">0.68</td></tr></tbody></table></div><p class="capnote"><b>W = 0 は相対偏差だけで判定した場合である。</b>W を上げると当たりが増えるのは当然であり、<b>W の根拠を書かずに q だけを示してはならない。</b></p>
+<h2 id="s5">5. 測点を除いてよい条件</h2>
+<p>計算の主目的に照らして重要でない箇所を評価から外すことは、<b>次の 3 つをすべて満たす場合に限り</b>正当である。</p>
+<div class="scroller"><table><caption>表 7　測点を除くための条件</caption><thead><tr><th>条件</th><th>なぜ必要か</th></tr></thead><tbody><tr><td>基準を<b>当てはめる前に</b>決める</td><td>結果を見てから決めると、都合の良い部分集合を選べてしまう</td></tr><tr><td>基準が<b>重要性</b>に基づく（当たり外れではない）</td><td>「歩行者が立てない場所」は重要性、「合わなかった点」は当たり外れである。後者は選別にあたる</td></tr><tr><td><b>除いたことと理由を書き、除く前の値も併記する</b></td><td>読み手が自分で判断できる形にする</td></tr></tbody></table></div><p class="capnote"><b>この 3 つを満たせないなら、除かずに hit rate を使う。</b>W が同じ役目を果たし、しかも恣意性が残らない。</p>
+<h2 id="s6">6. 実例 — ケース F 東風向の 1 点</h2>
+<p>ケース F の風向 E では、13 点のうち<b>1 点だけ</b>が定常計算のなかで振動し続けた（測点 11）。書き出した時刻ごとに 0.147 と 0.253 を往復し、振れは 0.2159。残る 12 点の振れは中央値で 0.0002 である。</p>
+<div class="scroller"><table><caption>表 8　1 点の扱いを変えたときの指標（ケース F 風向 E・現地観測）</caption><thead><tr><th>扱い</th><th>点数</th><th>傾き</th><th>R²</th><th>RMSE</th><th>偏り</th></tr></thead><tbody><tr><td>全13点 ／ 最終時刻</td><td class="num">13</td><td class="num">1.070</td><td class="num">-0.818</td><td class="num">0.1242</td><td class="num">+0.0338</td></tr><tr><td>全13点 ／ 末尾4時刻の平均</td><td class="num">13</td><td class="num">1.047</td><td class="num">-1.050</td><td class="num">0.1319</td><td class="num">+0.0258</td></tr><tr><td>静かな12点 ／ 最終時刻</td><td class="num">12</td><td class="num">1.091</td><td class="num">-0.776</td><td class="num">0.1278</td><td class="num">+0.0422</td></tr></tbody></table></div><p class="capnote"><b>どの扱いでも R² は負のままである。</b>したがって振動する 1 点はこの風向の不一致の主因ではない。<b>もし扱いによって R² が正負をまたいでいたなら、1 通りだけを示すことは誠実でない。</b>本サイトでは扱いを変えた結果を並べて示す。</p>
+<p>この例が示すのは、<b>除くか除かないかを決める前に、除いた場合と除かない場合の両方を計算しておく</b>ことの意味である。結論が変わらないなら、どちらを主に据えても議論は成り立つ。結論が変わるなら、<b>それ自体が報告すべき事実である。</b></p>
+<h2 id="s7">7. 本サイトでの報告の仕方</h2>
+<ul><li><b>RMSE・R²・hit rate を併記する。</b>どれか 1 つでは判断を誤る</li><li><b>hit rate には W と D を必ず添える。</b>W の根拠（測定のばらつきか、振った値か）も書く</li><li><b>測点を除いた場合は、除く前の値も出す</b></li><li><b>定常計算が落ち着かない点があれば、その点と振れ幅を示す</b></li></ul>
+<h2 id="s8">8. 参考文献</h2>
+<ol><li>VDI 3783 Blatt 9: <i>Environmental meteorology — Prognostic microscale wind field models — Evaluation for flow around buildings and obstacles</i>. Verein Deutscher Ingenieure.</li><li>COST Action 732: <i>Model evaluation guidance and protocol document</i>. Britter, R. and Schatzmann, M. (eds.), 2007.</li><li>Di Sabatino, S. ほか: <i>A model evaluation protocol for urban scale flow and dispersion models</i>.</li><li>Tominaga, Y. ほか (2008). AIJ guidelines for practical applications of CFD to pedestrian wind environment around buildings. <i>JWEIA</i> 96, 1749–1761.</li><li>AIJ UWE Benchmark Dataset — Case F (Shinjuku), doi:10.5281/zenodo.15589622（CC BY 4.0）</li></ol>
+<p class="note"><b>規格本体（VDI 3783 Blatt 9）は有償であり、本サイトでは購入していない。</b>したがって規格が定める W の値は参照していない。本編の W の扱いは、公開文献に記載された定義（D = 0.25、q ≥ 0.66）にもとづく<b>当方の判断である。</b></p>
+<h2 id="s__">付録　図表一覧</h2>
+<p><b>表</b></p><ol><li>改訂履歴</li><li>2 つの決定係数</li><li>同じ計算・同じ実測でも、定義が変われば値も符号も変わる（ケース F）</li><li>R² と hit rate は同じ順位を与えない（ケース F・風向ごと）</li><li>記号</li><li>W を振ったときの hit rate（例: ケース F 風向 N・風洞 22 点）</li><li>測点を除くための条件</li><li>1 点の扱いを変えたときの指標（ケース F 風向 E・現地観測）</li></ol>
+<div class="sig"><div>文書番号 CFD-METRICS-001 ／ 版 1.0 ／ 発行 2026-09-06</div><div>本編の数値は hitrate_F.json、variants_F_E.json、metrics_F_*.json から機械的に生成しており、本文に直接記入した値は無い。</div></div>
+</div>
+</body>
+</html>
