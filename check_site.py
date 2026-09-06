@@ -198,6 +198,9 @@ def main():
     hit = 0
     for f in html_files():
         s = open(f, encoding="utf-8", errors="ignore").read()
+        # **base64 の中を読まない。**埋め込んだ画像やフォントの符号列に
+        # 偶然「TODO」が並ぶ。誤検知が続くと本物の警告まで読み飛ばされる
+        s = re.sub(r'(src|href)="data:[^"]*"', " ", s)
         for allowed in ALLOW:      # 変数名を a にしない。引数の名前空間を潰す
             s = s.replace(allowed, "")
         for w, why in STALE_CHECKS:
