@@ -56,7 +56,15 @@ SOURCES = {
         "/mnt/c/Users/DZH05/claude-8/report/conditions_D.html",
     "aij-caseC/conditions_C.html":
         "/mnt/c/Users/DZH05/claude-6/report/conditions_C.html",
-    # **動画が抜けていた。**流線版に作り替えたのに公開されず、
+    # **ケース F の本体が網に無かった。**経緯のページだけを入れて本体を
+    # 忘れており、版 1.0 から 1.2 まで、いちばん大きいページが一度も
+    # 照合されていない。そのあいだに採用ケースの取り違えが 1 件、
+    # 公開されたまま残っていた。**検査器が見ていない所は、
+    # 検査していないのと同じである。**
+    "aij-caseF/index.html": "/mnt/c/Users/DZH05/claude-10/report/index_F.html",
+    "aij-caseF/conditions_F.html":
+        "/mnt/c/Users/DZH05/claude-10/report/conditions_F.html",
+    # ここから下は動画。**動画が抜けていた。**流線版に作り替えたのに公開されず、
     # 古いベクトル版のままだったのを指摘されて気づいた。
     # 点検の網から漏れているものは、点検が無いのと同じ。
     "aij-caseA/video/wind_A.mp4":
@@ -73,6 +81,13 @@ SOURCES = {
         "/mnt/c/Users/DZH05/claude-8/report/video/particles_D.mp4",
     # tube_D.mp4（流管）は 2026-09-04 に報告書から外した。
     # **点検表からも外す。**残すと「未公開」として毎回警告が出る。
+}
+
+# この repo の中で作っているページ。生成元と公開先が同じ場所なので、
+# 「生成元を公開し忘れた」が起こりえない。**除外は個別に理由を書く。**
+SELF_BUILT = {
+    "index.html",           # 目次。この repo の中で手で書いている
+    "metrics/index.html",   # build_metrics_note.py が同じ repo に書き出す
 }
 
 # 残っていたら怪しい語。過去に実際やらかした型を登録していく。
@@ -180,6 +195,28 @@ def main():
         else:
             print("  NG %s は生成元と違う（生成元を公開していない可能性）" % pub)
             ng += 1
+
+    # --- 3b. 網から漏れているページ -----------------------------------------
+    # **穴を 1 つずつ塞いでも同じことが起きる。**ケース F の本体は
+    # 版 1.0 から 1.2 まで網の外にあり、誰も気づかなかった。
+    # 上の照合は SOURCES を回すだけなので、**表に無いページは
+    # 「OK」とも「NG」とも出ない。存在ごと見えない。**
+    # そこで、公開してあるページのうち表にも除外にも無いものを挙げる。
+    print("\n== 点検の網から漏れているページ ==")
+    out = []
+    for pub in sorted(html_files()):
+        rel = os.path.relpath(pub, ROOT).replace(os.sep, "/")
+        if rel in SOURCES or rel in SELF_BUILT:
+            continue
+        out.append(rel)
+    if out:
+        for rel in out:
+            print("  NG %s は生成元と照合していない" % rel)
+        print("  SOURCES に足すか、site の中で作っているなら"
+              " SELF_BUILT に理由つきで入れること。")
+        ng += len(out)
+    else:
+        print("  問題なし")
 
     # --- 4. 未 push ----------------------------------------------------------
     print("\n== git ==")
