@@ -152,6 +152,15 @@ footer a{color:var(--accent)}
     残った差がどこに由来するのかまで書いています。
     合わなかった項目と、途中で撤回した結論も、そのまま残してあります。
   </p>
+<p class="lede" style="border-left:3px solid #9A5B06;padding-left:14px;margin-top:18px">
+<strong>これは途中経過の公開です。</strong>
+現在、計算条件の全体について見直しを進めています。
+そのため<strong>現在の各報告書は、精度を上げていく過程の記録</strong>であり、
+確定した検証結果ではありません。合わなかった項目・撤回した結論も
+そのまま残してあります。<strong>引用されるときは、この段階のものであることを
+落とさないでください。</strong>
+条件が定まった時点で、全体を作り直した版を出す予定です。
+</p>
 </header>
 
 <article class="entry">
@@ -486,6 +495,51 @@ footer a{color:var(--accent)}
       <li>撤回した結論も収録</li>
     </ul>
   </div>
+</article>
+
+<article class="entry">
+<dl class="meta">
+<div>
+<dt>対象</dt>
+<dd>市街地風環境（等温）<br>実市街地の街区</dd>
+</div>
+<div>
+<dt>比較先</dt>
+<dd class="src">風洞実験</dd>
+<dd>AIJ 市街地風環境ベンチマーク ケース E<br>新潟工科大学、CC BY 4.0</dd>
+</div>
+</dl>
+<div>
+<h2><a href="aij-caseE/">AIJ 市街地風環境ベンチマーク ケース E（新潟）</a></h2>
+<p>
+実市街地の歩行者高さ風速を、80 点の風洞実験値と照合。
+<strong>格子・乱流モデル・圧力速度連成を 1 つずつ変えても、実測との一致は改善しませんでした。</strong>
+点ごとには解が大きく動くのに集計指標が動かないことから、
+誤差の主因がこれら 3 つのどれでもないことまでは絞れています。
+<strong>途中経過の記録であり、確定した検証結果ではありません。</strong>
+</p>
+<dl class="figures">
+<div>
+<dt>風速比の回帰（原点通過）</dt>
+<dd>a = 0.62, R&sup2; = 0.38</dd>
+</div>
+<div>
+<dt>共通 77 点の RMSE</dt>
+<dd>0.1997</dd>
+</div>
+<div>
+<dt>相関（最良のラン）</dt>
+<dd>0.71（公表例 0.76）</dd>
+</div>
+</dl>
+<ul class="tags">
+<li>OpenFOAM v2606 / simpleFoam</li>
+<li>1,481,929 セル（格子依存 2,719,676）</li>
+<li>風向 N のみ</li>
+<li>縮尺 1:250</li>
+<li>途中経過</li>
+</ul>
+</div>
 </article>
 
 <article class="entry">

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIJ ケース E（新潟）— 検討の経緯</title>
+<meta name="description" content="ケース E の調査で何をどう間違え、どう直したかの記録">
+<style>
+:root{--ground:#EEF1F4;--paper:#FFFFFF;--sunk:#F2F5F7;--ink:#14202B;
+--muted:#55697A;--faint:#8496A3;--rule:#C9D4DC;--rule2:#8FA3B0;
+--accent:#14406B;--good:#0E6B52;--warn:#9A5B06;--bad:#95261C;
+--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-size:15px;
+line-height:1.85;font-family:-apple-system,BlinkMacSystemFont,
+"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+font-feature-settings:"palt"}
+.sheet{max-width:960px;margin:0 auto;background:var(--paper);
+padding:52px 62px 84px;box-shadow:0 1px 3px rgba(20,32,43,.10)}
+.cover{border-bottom:3px double var(--rule2);padding-bottom:30px;margin-bottom:8px}
+.cover .kind{font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;
+color:var(--accent);margin-bottom:26px}
+.cover h1{font-size:27px;line-height:1.45;margin:0 0 6px;font-weight:700}
+.cover .sub{font-size:16.5px;color:var(--muted);margin:0 0 26px}
+.cover dl{display:grid;grid-template-columns:8.5em 1fr;gap:3px 16px;
+font-size:13.5px;margin:0}
+.cover dt{color:var(--faint)}
+.cover dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums}
+h2{font-size:19px;margin:44px 0 12px;padding:10px 0 8px;
+border-top:2px solid var(--rule2);border-bottom:1px solid var(--rule)}
+h3{font-size:15.5px;margin:26px 0 8px;color:var(--accent)}
+h4{font-size:14px;margin:18px 0 6px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:1.5em}
+li{margin:0 0 4px}
+nav.toc{background:var(--sunk);border:1px solid var(--rule);padding:18px 26px;
+margin:26px 0 8px;font-size:14px}
+nav.toc h2{border:none;margin:0 0 8px;padding:0;font-size:15px}
+nav.toc ol{list-style:none;padding:0;margin:0;columns:2;column-gap:34px}
+nav.toc li{margin:0 0 3px;break-inside:avoid}
+nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--rule2)}
+nav.toc a:hover{color:var(--accent)}
+.scroller{overflow-x:auto;margin:6px 0 4px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--paper)}
+th,td{border:1px solid var(--rule);padding:7px 10px;text-align:left;
+vertical-align:top}
+th{background:var(--sunk);font-weight:600;font-size:12.5px;color:var(--muted)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+tbody tr:nth-child(even){background:#FAFCFD}
+caption{caption-side:top;text-align:left;font-size:13px;color:var(--muted);
+padding:10px 0 5px;font-weight:600}
+.capnote{font-size:12.5px;color:var(--faint);margin:3px 0 20px;line-height:1.7}
+details.fold{border:1px solid var(--rule);border-radius:4px;
+background:var(--sunk);margin:14px 0 22px}
+details.fold>summary{cursor:pointer;padding:10px 14px;font-size:13px;
+font-weight:600;color:var(--accent);list-style:none}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::before{content:"▸ ";color:var(--faint)}
+details.fold[open]>summary::before{content:"▾ "}
+details.fold[open]>summary{border-bottom:1px solid var(--rule)}
+details.fold .foldhint{font-weight:400;color:var(--muted);margin-left:10px}
+details.fold>.scroller,details.fold>.capnote{margin:0;padding:0 14px}
+details.fold>.scroller{padding-bottom:12px}
+details.fold>.capnote{padding-bottom:12px}
+/* 見出しは summary が持つので、開いたときに表題が二重にならないよう消す */
+details.fold caption{display:none}
+details.fold>.scroller{padding-top:12px}
+/* **印刷では必ず開く。**閉じた details は中身が印刷されない。
+   紙や PDF にしたときに表が丸ごと消えるのは開示の欠落である。 */
+@media print{details.fold{background:none;border:none}
+details.fold>summary{list-style:none;color:var(--muted)}
+details.fold>summary::before{content:""}
+details.fold>*{display:block!important}}
+figure{margin:16px 0 22px}
+img{max-width:100%;height:auto;border:1px solid var(--rule);background:var(--paper)}
+figcaption{font-size:13px;color:var(--muted);font-weight:600;margin-top:8px}
+figcaption .n{color:var(--accent)}
+.note{border:1px solid var(--rule);border-left:4px solid var(--accent);
+background:var(--sunk);padding:13px 17px;margin:16px 0;font-size:14px}
+.note.good{border-left-color:var(--good)}
+.note.warn{border-left-color:var(--warn)}
+.note.bad{border-left-color:var(--bad)}
+.note h4{margin:0 0 6px;font-size:14px}
+.note p:last-child{margin-bottom:0}
+span.good{color:var(--good);font-weight:600}
+span.warn{color:var(--warn);font-weight:600}
+span.bad{color:var(--bad);font-weight:600}
+code{font-family:var(--mono);font-size:.9em;background:var(--sunk);
+padding:1px 4px;border-radius:2px}
+.refs{font-size:13.5px}
+.refs li{margin-bottom:7px}
+.sig{margin-top:44px;border-top:1px solid var(--rule);padding-top:14px;
+font-size:12.5px;color:var(--faint);font-family:var(--mono)}
+@media print{body{background:#fff}.sheet{box-shadow:none;max-width:none;padding:0}
+h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
+@media(max-width:760px){.sheet{padding:30px 20px 60px}nav.toc ol{columns:1}
+.cover h1{font-size:22px}}
+</style>
+</head>
+<body><main class="sheet">
+
+<header class="cover">
+<div class="kind">CFD-AIJ-E-N01</div>
+<h1>AIJ ケース E（新潟）<br>検討の経緯</h1>
+<p class="sub">何をどう間違え、どう直したか</p>
+<p class="series"><a href="index.html">← 本文にもどる</a></p>
+</header>
+
+<h2>訂正の記録</h2>
+<p><b>調査の途中で出した判断のうち、後に誤りと分かったものを残す。</b>
+消して書き直すと、訂正した事実そのものが消えるためである。</p>
+
+<h3>1. 調べる順序を誤った</h3>
+<p>格子・乱流モデル・圧力速度連成を先に振り尽くした。
+<b>いずれも解を大きく動かすが、実測との一致は上げなかった。</b>
+振る前に確かめておくべきことが残っており、順序が逆だった。
+本文 5 章の結果は、その順序で得たものである。</p>
+
+<h3>2. 「ほぼ公表値に届いた」と述べたが、撤回する</h3>
+<p>公表例に条件を合わせたランについて、一度は平均相対差 −19.7 % と報告した。
+<b>基準の取り方を誤っており、この値は過大だった。</b>
+測り直した値は -40.8 % で、基準のランより悪い。本文の表 4 は測り直した値である。</p>
+<p class="note"><b>相関と R² はこの誤りの影響を受けない。</b>
+風速比に一律の倍率がかかっても変わらない量だからである。
+本文 6 章で相関だけを比較しているのはこのためである。</p>
+
+<h3>3. 「細分化は意味がない」とは言えない</h3>
+<p>格子を細かくしても集計指標が動かなかったことから、一度は
+「細分化は効かない」と述べかけた。<b>これは誤りである。</b>
+解は点ごとに振れの 58 倍動いており、<b>格子独立には達していない。</b>
+動いた先が実測に近づかないだけである。</p>
+
+<h3>4. 見立てが部分的にしか当たっていなかった</h3>
+<p>水準が崩れた原因について一つの見立てを述べたが、
+測ってみると説明できるのは 2〜4 割にとどまった。
+<b>残りは別の要因である。</b>特定は済んでいない。</p>
+
+<h2>この記録の位置づけ</h2>
+<p><b>計算条件の全体を見直している最中である。</b>
+本文の数値は見直し前のものであり、確定した検証結果ではない。
+条件が定まった時点で、全体を作り直した版を出す予定である。</p>
+
+<div class="sig">
+<div>文書番号 CFD-AIJ-E-N01 ／ 版 0.1 ／ 発行 2026-09-13</div>
+</div>
+</main></body></html>
