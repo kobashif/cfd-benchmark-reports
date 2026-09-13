@@ -1,1 +1,3 @@
 __pycache__/
+# 道具は非公開庫（cfd-jobs-portable/site_tools）で管理する。公開庫には載せない
+*.py
