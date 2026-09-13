@@ -296,7 +296,7 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
 AIJ の各報告（数値をすべて JSON から機械生成している）とは異なる。</p>
 <p><b>格子の検査結果を取り直した（2026-09-07）。</b>
 当初は <code>checkMesh</code> の記録が残っておらず「再検証できない」と書いていたが、
-<b>格子は生成器から作り直せる。</b><code>gen_hgrid.py</code> &rarr;
+<b>格子は生成器から作り直せる。</b>格子の生成器 &rarr;
 <code>blockMesh</code> で作り直したところ<b>セル数 560,500 が公開値と一致し</b>、
 同じ格子であることを確かめたうえで <code>checkMesh</code> を取り直した。</p>
 <table><caption>表　格子の品質（取り直した <code>checkMesh</code>）</caption>

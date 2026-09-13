@@ -97,7 +97,15 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
 .cover h1{font-size:22px}}
 </style>
 </head>
-<body><main class="sheet">
+<body>
+<div style="background:#fff4e5;border:2px solid #d97706;padding:12px 16px;margin:0 0 20px;border-radius:6px;font-size:0.95em;line-height:1.7">
+<b>これは版 0.1 の凍結版です。</b>内容は当時のまま保存しており、更新しません。
+<b>最新版は <a href="../">こちら</a>。</b>
+数値が新版と違う場合、<b>新しい版の改訂履歴にその理由が書いてあります</b>。
+なお<b>経緯のページと動画は共有</b>しており、リンク先は最新のものになります
+（経緯は累積の記録であり、版ごとに切ると追えなくなるため）。
+</div>
+<main class="sheet">
 
 <header class="cover">
 <div class="kind">CFD-AIJ-E-N01</div>
@@ -113,7 +121,7 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
 <p class="series"><b>これは途中経過の記録であって、確定した検証結果ではない。</b>
 計算条件の全体を見直している最中であり、本ページの数値を
 「ケース E の検証結果」として引用しないこと。満たしていない項目は 7 章に挙げる。
-<b>何をどう間違え、どう直したかは</b><a href="history.html">検討の経緯</a>にある。<b>版 0.1 の全文は凍結してある</b>（<a href="v0.1/">版 0.1</a>）。</p>
+<b>何をどう間違え、どう直したかは</b><a href="../history.html">検討の経緯</a>にある。</p>
 </header>
 
 <nav class="toc"><h2>目次</h2><ol>
@@ -179,31 +187,22 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
 厳密には「格子だけを変えた比較」になっていない。この点は 7 章に挙げる。
 なお細格子は、粗格子で建物の中に埋もれていた測点 2 点を開けた。</p>
 <h2 id="s3">3. 到達状態（収束）</h2>
-<p><b>収束の判定は、すべてのランに同じ基準を当てた。</b>
-圧力の初期残差（反復ごとの最初の圧力解）が 5e-04 以下で、かつ
-報告する量（測点の風速比）が 500 反復以上の区間で最大 0.005 未満・
-中央値 0.001 未満しか動かないとき、収束判定を満たすとした。</p>
-<table><caption>表 3　ランごとの到達状態</caption>
-<thead><tr><th>ラン</th><th>反復数</th><th>圧力の残差</th>
-<th>報告する量の動き（最大 / 中央値）</th><th>到達状態</th></tr></thead>
-<tbody><tr><td>A</td><td class=num>9,200</td><td class=num>7.3e-04</td><td class=num>0.0129 / 0.00017</td><td><b>収束判定を満たさない</b><br>（圧力 7.33e-04 > 5e-4、報告する量 最大 0.0129 が基準を超える）</td></tr><tr><td>B</td><td class=num>9,200</td><td class=num>6.3e-04</td><td class=num>0.0066 / 0.00023</td><td><b>収束判定を満たさない</b><br>（圧力 6.32e-04 > 5e-4、報告する量 最大 0.0103 が基準を超える）</td></tr><tr><td>C</td><td class=num>9,200</td><td class=num>8.0e-04</td><td class=num>0.0136 / 0.00049</td><td><b>収束判定を満たさない</b><br>（圧力 7.96e-04 > 5e-4、報告する量 最大 0.0136 が基準を超える）</td></tr><tr><td>D</td><td class=num>5,185</td><td class=num>1.3e-02</td><td class=num>0.0201 / 0.00050</td><td><b>収束判定を満たさない</b><br>（圧力 1.30e-02 > 5e-4、報告する量 最大 0.0201 が基準を超える）</td></tr><tr><td>E</td><td class=num>3,245</td><td class=num>4.0e-04</td><td class=num>—</td><td><b>判定できない</b><br>（報告する量の動きを測る材料が無い）</td></tr></tbody></table>
-<p class="capnote"><b>収束判定を満たしたランは 0 本、満たさないランは 4 本、
-判定できないランは 1 本である。</b>判定できないのは、報告する量を
-採った時刻が 1 つしか残っておらず、動きを測れないためである。
-満たしたとも満たさないとも書かない。</p>
-<p class="note"><b>計算を止める条件とは別である。</b>
-計算は <code>residualControl</code> を停止条件にして回しており、
-ラン E はそれを満たして 3,245 反復で止まった。
-<b>しかし停止条件を満たしたことは、収束判定を満たしたことを意味しない。</b>
-判定は停止の経緯によらず同じ基準で行う。</p>
-<p class="note"><b>速度の残差は判定に使わない。</b>
-OpenFOAM は速度の残差を成分ごとに、その成分の大きさで割って求める。
-流れのほとんど無い成分（風向に直交する成分や鉛直成分）は、
-実際の不釣り合いが小さくても残差が大きく出る。</p>
-<p class="note"><b>収束の良さと、実測との一致は別である</b>（ここでの収束の良さは、停止条件を満たしたことを指す）。
-停止条件を満たしたのはラン E だけだが、
+<p><b>到達状態を一語で片づけない。</b>判定が発火しなかったのか、解が落ち着いていないのかは別のことなので、分けて書く。</p>
+<p>本調査の 5 本のうち、<code>residualControl</code> を満たして停止したのは
+<b>ラン E の 1 本だけ</b>である（3,245 反復）。他の 4 本は
+<b>解は定常（残差は下げ止まり、判定値には届かない）</b>に当たる。
+残差の傾きは直近 500 反復対その前 500 反復で ±0.007 桁以内に収まっている。</p>
+<p class="note"><b>判定値の水準が結果を左右する。</b>
+本調査の既定は p 1e-5 で、これは公表例（p 5e-4）より 50 倍厳しい。
+公表例の判定に当てはめても A（7.33e-4）・B（6.23e-4）・C（7.96e-4）は
+いずれも未達だが、差は 1.2〜1.6 倍にとどまる。
+<b>U・k・ε は 4 桁降下の条件を満たしており、未達なのは p だけである。</b>
+<b>引用時にこの区別を落とさないこと。</b></p>
+<p class="note"><b>収束の良さと、実測との一致は別である。</b>
+本調査で <code>residualControl</code> を満たしたのはラン E だけだが、
 <b>そのラン E の RMSE は 5 本のなかで最も大きい</b>（0.2083。最小はラン D の 0.1941）。
-<b>止まったことを、合っていることの根拠に使わないこと。</b></p>
+収束は「その設定の解に達したか」であって、「その解が現実に合うか」ではない。
+<b>収束していることを、合っていることの根拠に使わないこと。</b></p>
 <p class="note"><b>realizable k-ε では bounding が多発する。</b>
 ラン C で 2,601 回、ラン E で 2,225 回（全反復の 24〜28 %）。
 標準 k-ε の 2 本は 0 回だった。負の最小値になった回数はラン C で 0 回である。
@@ -212,7 +211,7 @@ OpenFOAM は速度の残差を成分ごとに、その成分の大きさで割�
 <p>残差が下げ止まっても、報告する量は動き続けることがある。
 ラン A を 490 反復だけ延長し、歩行者面と鉛直断面を 10 反復ごとに 50 枚書き出して、
 各点の<b>振幅（最大 − 最小）/ U<sub>R</sub></b>を測った。</p>
-<table><caption>表 4　振幅がしきい値を超える面積の割合（建物の中は除く）</caption>
+<table><caption>表 3　振幅がしきい値を超える面積の割合（建物の中は除く）</caption>
 <thead><tr><th>振幅 / U<sub>R</sub></th><th>歩行者面 z = 2 m</th>
 <th>高層棟を通る鉛直断面</th></tr></thead>
 <tbody><tr><td class=num>0.01</td><td class=num>2.1 %</td><td class=num>0.5 %</td></tr><tr><td class=num>0.02</td><td class=num>0.8 %</td><td class=num>0.0 %</td></tr><tr><td class=num>0.05</td><td class=num>0.0 %</td><td class=num>0.0 %</td></tr><tr><td class=num>0.10</td><td class=num>0.0 %</td><td class=num>0.0 %</td></tr></tbody></table>
@@ -225,7 +224,7 @@ OpenFOAM は速度の残差を成分ごとに、その成分の大きさで割�
 80 点で測った変化は 500 反復あたり平均 0.00072（風速比）だった。
 <b>これを下回る差は主張できない。</b></p>
 <h2 id="s5">5. 設定を 1 つずつ変えた結果</h2>
-<table><caption>表 5　共通 77 点で測り直した指標</caption>
+<table><caption>表 4　共通 77 点で測り直した指標</caption>
 <thead><tr><th>ラン</th><th>セル数</th><th>モデル</th><th>連成</th><th>位置づけ</th>
 <th>傾き</th><th>R²</th><th>RMSE</th><th>相関</th><th>平均相対差</th></tr></thead>
 <tbody><tr><td>A</td><td class=num>1,481,929</td><td>k-ε</td><td>SIMPLEC</td><td>基準</td><td class=num>0.6198</td><td class=num>0.3838</td><td class=num>0.1997</td><td class=num>0.6396</td><td class=num>-34.1 %</td></tr><tr><td>B</td><td class=num>2,719,676</td><td>k-ε</td><td>SIMPLEC</td><td>格子を細かくした</td><td class=num>0.6093</td><td class=num>0.3476</td><td class=num>0.2042</td><td class=num>0.6186</td><td class=num>-34.2 %</td></tr><tr><td>C</td><td class=num>2,719,676</td><td>realizable k-ε</td><td>SIMPLEC</td><td>細格子でモデルを替えた</td><td class=num>0.6276</td><td class=num>0.1769</td><td class=num>0.2066</td><td class=num>0.5078</td><td class=num>-28.7 %</td></tr><tr><td>D</td><td class=num>1,481,929</td><td>realizable k-ε</td><td>SIMPLE</td><td>基準格子でモデルを替えた</td><td class=num>0.6474</td><td class=num>0.3377</td><td class=num>0.1941</td><td class=num>0.6083</td><td class=num>-30.1 %</td></tr><tr><td>E</td><td class=num>1,481,929</td><td>realizable k-ε</td><td>SIMPLEC</td><td>公表例に条件を合わせた</td><td class=num>0.5948</td><td class=num>0.4991</td><td class=num>0.2083</td><td class=num>0.7065</td><td class=num>-40.8 %</td></tr></tbody></table>
@@ -258,9 +257,8 @@ Hågbo &amp; Giljarhus (2022) が OpenFOAM 6・realizable k-ε・<b>1,210 万セ
 <ul>
 <li><b>計算条件の全体を見直している最中である。</b>本ページは見直し前の記録であり、
 確定した検証結果ではない。</li>
-<li><b>収束判定を満たしたランは無い。</b>4 本は満たさず（圧力の残差が
-5e-04 を上回る、または少数の測点が動き続ける）、1 本は判定の材料が残っていない。
-<b>本ページの指標は、いずれも収束判定を満たさない状態で測った値である。</b></li>
+<li><b>収束判定を満たしたのは 5 本中 1 本である。</b>他は残差が判定値の
+63〜80 倍で下げ止まっている。</li>
 <li><b>格子依存性は解消していない。</b>2 つの格子で点ごとに 22 % 違う。
 GCI は算出していない。</li>
 <li><b>格子だけを変えた比較になっていない。</b>実市街地の細分を 1 段変えると
@@ -303,7 +301,7 @@ Tominaga, Y.（新潟工科大学）。Zenodo, DOI 10.5281/zenodo.15429017, CC B
 </ol>
 
 <div class="sig">
-<div>文書番号 CFD-AIJ-E-N01 ／ 版 0.2 ／ 発行 2026-09-13</div>
+<div>文書番号 CFD-AIJ-E-N01 ／ 版 0.1 ／ 発行 2026-09-13</div>
 <div>OpenFOAM v2606 (ESI) ・ simpleFoam ・ 風向 N</div>
 <div><b>途中経過の記録。</b>確定した検証結果として引用しないこと。</div>
 </div>
