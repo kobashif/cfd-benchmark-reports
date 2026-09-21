@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex">
-<title>【草稿・非公開】AIJ ケース A 風環境 CFD 解析報告書 — CFD-AIJ-A-001 版 2.0（草稿）</title>
+
+<title>AIJ ケース A 風環境 CFD 解析報告書 — CFD-AIJ-A-001 版 2.0</title>
 <style>
 :root{--ground:#EEF1F4;--paper:#FFFFFF;--sunk:#F2F5F7;--ink:#14202B;
 --muted:#55697A;--faint:#8496A3;--rule:#C9D4DC;--rule2:#8FA3B0;
@@ -100,12 +100,11 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
 </head>
 <body>
 <div class="sheet">
-<div class="note bad"><h4>草稿（非公開）</h4><p>差し替え用の版の草稿である。<b>公開していない。</b>モデル比較は計算が済んだ 8 / 8 モデルを載せている。</p></div>
 <div class="cover"><div class="kind">数値流体解析 報告書 / CFD ANALYSIS REPORT</div>
 <h1>市街地風環境 CFD 解析の妥当性確認<br>AIJ 風環境ベンチマーク ケース A（1:1:2 単体角柱）</h1>
 <p class="sub">定常 RANS の乱流モデル 8 種の比較と格子依存性</p>
-<dl><dt>文書番号</dt><dd>CFD-AIJ-A-001</dd><dt>版数</dt><dd>2.0（草稿）</dd><dt>作成日</dt><dd>2026-09-21</dd><dt>解析コード</dt><dd>OpenFOAM v2606 (ESI) / simpleFoam</dd><dt>解析対象</dt><dd>1:1:2 単体角柱（奥行 0.08 m × 幅 0.08 m × 高さ 0.16 m）</dd><dt>照合データ</dt><dd>風洞実験 186 点（歩行者高さ 65 点）</dd><dt>評価高さ</dt><dd>z = 0.01 m（建物高さの 0.0625 倍）</dd></dl></div>
-<div class="scroller"><table><caption>表 1　改訂履歴</caption><thead><tr><th>版</th><th>日付</th><th>改訂内容</th></tr></thead><tbody><tr><td>1.x</td><td class="num">—</td><td>版 2.0 以前の履歴は凍結版に残す</td></tr><tr><td class="num">2.0</td><td>（未発行）</td><td><b>全面改訂。</b>地表面の粗度条件、計算を止める基準、緩和係数、格子（3 通り）を見直し、乱流モデル 8 種を計算し直した。旧版の数値とは比べられない</td></tr></tbody></table></div>
+<dl><dt>文書番号</dt><dd>CFD-AIJ-A-001</dd><dt>版数</dt><dd>2.0</dd><dt>発行日</dt><dd>2026-09-21</dd><dt>解析コード</dt><dd>OpenFOAM v2606 (ESI) / simpleFoam</dd><dt>解析対象</dt><dd>1:1:2 単体角柱（奥行 0.08 m × 幅 0.08 m × 高さ 0.16 m）</dd><dt>照合データ</dt><dd>風洞実験 186 点（歩行者高さ 65 点）</dd><dt>評価高さ</dt><dd>z = 0.01 m（建物高さの 0.0625 倍）</dd></dl></div>
+<div class="scroller"><table><caption>表 1　改訂履歴</caption><thead><tr><th>版</th><th>日付</th><th>改訂内容</th></tr></thead><tbody><tr><td>1.x</td><td class="num">—</td><td>版 2.0 以前の履歴は凍結版に残す</td></tr><tr><td class="num">2.0</td><td class="num">2026-09-21</td><td><b>全面改訂。</b>地表面の粗度条件、計算を止める基準、緩和係数、格子（3 通り）を見直し、乱流モデル 8 種を計算し直した。旧版の数値とは比べられない</td></tr></tbody></table></div>
 <nav class="toc"><h2>目次</h2><ol><li><a href="#s0">0. 要旨</a></li><li><a href="#s1">1. 対象と実験</a></li><li><a href="#s2">2. 解析条件</a></li><li><a href="#s3">3. 検証（Verification）</a></li><li><a href="#s4">4. 妥当性確認（Validation）</a></li><li><a href="#s5">5. 乱流モデルの比較</a></li><li><a href="#s6">6. 結論</a></li><li><a href="#s7">7. 適用範囲および留意事項</a></li><li><a href="#s8">8. 参考文献</a></li><li><a href="#s___A">付録 A　再現のための計算条件</a></li><li><a href="#s___B">付録 B　図表一覧</a></li></ol></nav>
 <h2 id="s0">0. 要旨</h2>
 <p>AIJ 風環境ベンチマーク ケース A（1:1:2 単体角柱）を定常 RANS で解き、乱流モデル 8 種を同じ格子・同じ停止基準で風洞実験 186 点と照合した。</p><ul>
@@ -271,7 +270,7 @@ relaxationFactors { equations { U 0.7; "(R|epsilon)" 0.5; } }
 <h2 id="s___B">付録 B　図表一覧</h2>
 <p><b>図</b></p><ol><li>計算領域・建物・測点の見取り図</li><li>建物と測点の配置（平面と中心断面）</li><li>格子の見取り図（普通の格子・建物まわり）</li><li>格子を細かくしたときの動き</li><li>3 通りの格子と、その格子で計算した風（上が中心断面 y = 0、下が歩行者高さの平面）</li><li>格子ごとの中心断面 y = 0 の風速（標準 k-ε）</li><li>格子ごとの歩行者高さの風速（標準 k-ε）</li><li>全測点における風速 3 成分と乱流エネルギー（標準 k-ε）</li><li>中心断面の風速（標準 k-ε）</li><li>建物断面の風速のコンターとベクトル（標準 k-ε）</li><li>建物断面の乱流エネルギー（標準 k-ε）</li><li>乱流モデル別の RMSE</li><li>乱流モデル別の中心断面 y = 0 の風速（普通の格子）</li><li>乱流モデル別の歩行者高さの風速（普通の格子）</li><li>乱流モデル別の中心断面 y = 0 の乱流エネルギー（普通の格子）</li><li>乱流モデル別の歩行者高さの乱流エネルギー（普通の格子）</li><li>非定常計算での後流の変動（k-ω SST）</li><li>Kato–Launder 型と標準 k-ε の乱流エネルギーの比較（普通の格子）</li><li>圧力の初期残差の履歴</li></ol>
 <p><b>表</b></p><ol><li>改訂履歴</li><li>解析条件</li><li>解析領域と AIJ 指針の照合</li><li>比較した乱流モデル</li><li>照合に使う指標</li><li>モデルごとの到達状態（普通の格子）</li><li>格子と地表の粗度条件を変えたときの動き（標準 k-ε）</li><li>観測次数と GCI</li><li>3 通りとも同じ粗度条件にしたときの動き（標準 k-ε・z<sub>0</sub> = 1.20×10<sup>−4</sup> m）</li><li>同じ z<sub>0</sub> での観測次数と GCI</li><li>照合の指標（標準 k-ε・普通の格子）</li><li>収束判定を満たしたモデルの照合（普通の格子。RMSE の小さい順）</li><li>打ち切ったモデルの参考値（普通の格子）</li><li>同じ z<sub>0</sub> にそろえたときの照合（普通の格子）</li><li>打ち切ったモデルの RMSE の動き</li><li>非定常計算で分かったこと（k-ω SST・普通の格子）</li><li>時間平均の場と実測の照合（全測点）</li><li>生成項の違い</li><li>領域別の比較（普通の格子。左が Kato–Launder 型、右が標準 k-ε）</li><li>風速の大きい所と小さい所で分けた一致（標準 k-ε・普通の格子）</li><li>境界条件（標準 k-ε の計算。場ごとの型）</li><li>流入境界で与えた分布（接近流の実測。ε は局所平衡から）</li><li>格子の条件（blockMesh による直交格子。建物は欠いたブロックで厳密に表す）</li><li>計算環境と計算時間</li></ol>
-<div class="sig"><div>文書番号 CFD-AIJ-A-001 ／ 版 2.0（草稿） ／ 作成 2026-09-21</div><div>OpenFOAM v2606 (ESI) ・ simpleFoam ・ 実測 186 点</div><div>本報告の数値は後処理の出力と計算の記録から機械的に生成しており、本文に直接記入した値は無い。</div></div>
+<div class="sig"><div>文書番号 CFD-AIJ-A-001 ／ 版 2.0 ／ 発行 2026-09-21</div><div>OpenFOAM v2606 (ESI) ・ simpleFoam ・ 実測 186 点</div><div>本報告の数値は後処理の出力と計算の記録から機械的に生成しており、本文に直接記入した値は無い。</div></div>
 </div>
 </body>
 </html>
