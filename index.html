@@ -191,7 +191,7 @@ footer strong{color:var(--ink);font-weight:600}
           <span class="key">RMSE 0.1351</span>
         </span>
         <p class="desc">
-          風速と乱流エネルギーを 186 点で照合。乱流モデル 8 種を同じ格子・同じ停止基準で解き、
+          風速と乱流エネルギーを 186 点で照合。乱流モデル 7 種を同じ格子・同じ停止基準で解き、
           <strong>収束したものと打ち切ったものを分けて</strong>載せています。
           打ち切った 1 種は非定常計算で確かめ、後流が周期 0.24 秒で振れ続けることを示しました。
         </p>
@@ -204,10 +204,10 @@ footer strong{color:var(--ink);font-weight:600}
       <span>
         <span class="head">
           <span class="title">ケース B — 1:4:4 板状建物</span>
-          <span class="key">RMSE 0.1350</span>
+          <span class="key">RMSE 0.1388</span>
         </span>
         <p class="desc">
-          224 点で照合。ケース A と同じ 8 種・同じ手順で解き、形状比が変わったときに
+          224 点で照合。ケース A と同じ 7 種・同じ手順で解き、形状比が変わったときに
           モデルの順位がどう動くかを見ています。
         </p>
         <p class="src">風洞実験 &middot; Miyazaki &amp; Tominaga (2003)　｜　680,916 セル・格子 3 通り・Re 72,000</p>
@@ -219,13 +219,14 @@ footer strong{color:var(--ink);font-weight:600}
       <span>
         <span class="head">
           <span class="title">ケース C — 3&times;3 街区</span>
-          <span class="key">±25 % 以内 50 %</span>
+          <span class="key">再計算中</span>
         </span>
         <p class="desc">
-          中央棟の高さ 3 通り &times; 風向 3 通りの <strong>9 条件を通しで</strong>照合。
-          歩行者高さ 1080 点、風速比の回帰は a = 1.08、R&sup2; = 0.79。
+          中央棟の高さ 3 通り &times; 風向 3 通りの 9 条件。
+          <strong>版 2.3 までの結果を取り下げ、標準 k-&epsilon; で計算し直しています。</strong>
+          結果が揃うまで数値は載せていません。
         </p>
-        <p class="src">風洞実験 &middot; Nonomura ほか (2003)　｜　365,868〜614,084 セル・Kato–Launder 型 k-&epsilon;</p>
+        <p class="src">風洞実験 &middot; Nonomura ほか (2003)　｜　365,868〜614,084 セル・標準 k-&epsilon; で再計算中</p>
       </span>
     </a></li>
 
@@ -234,13 +235,14 @@ footer strong{color:var(--ink);font-weight:600}
       <span>
         <span class="head">
           <span class="title">ケース D — 街区・風向 3 種</span>
-          <span class="key">±25 % 以内 55 %</span>
+          <span class="key">再計算中</span>
         </span>
         <p class="desc">
-          同じ量どうしで照合できる風向 0&deg; では RMSE 0.077、偏り −0.010。
-          全 198 点（独立な点 165）では RMSE 0.144。
+          高層棟を含む街区を風向 3 通りで照合。
+          <strong>版 2.3 までの結果を取り下げ、標準 k-&epsilon; で計算し直しています。</strong>
+          結果が揃うまで数値は載せていません。
         </p>
-        <p class="src">風洞実験 &middot; Tominaga ほか (2008)　｜　1,174,409 セル・Kato–Launder 型 k-&epsilon;</p>
+        <p class="src">風洞実験 &middot; Tominaga ほか (2008)　｜　1,174,409 セル・標準 k-&epsilon; で再計算中</p>
       </span>
     </a></li>
 

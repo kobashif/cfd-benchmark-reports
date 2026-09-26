@@ -99,7 +99,7 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
 </head>
 <body>
 <div style="background:#fff4e5;border:2px solid #d97706;padding:12px 16px;margin:0 0 20px;border-radius:6px;font-size:0.95em;line-height:1.7">
-<b>これは版 1.1 の凍結版です。</b>内容は当時のまま保存しており、更新しません。
+<b>これは版 1.1 の凍結版です。</b>内容は当時のまま保存しており、更新しません。<br><b>2026-09-26 追記：</b>この版の結果の多くは、Kato–Launder 型 k-ε を本計算で実装したもの（k・ε 両式の生成項を置き換え、上限を実質なしとしたもの。原典の形と異なる）によるもので、<b>取り下げた</b>。Kato–Launder 型の系統は標準 k-ε と原典の形だけを載せることにしたためである。このモデルについての数値・順位・結論を引用しないこと。最新版は <a href="../">本編</a> を見ること。
 <b>最新版は <a href="../">こちら</a>。</b>
 数値が新版と違う場合、<b>新しい版の改訂履歴にその理由が書いてあります</b>。
 なお<b>経緯のページと動画は共有</b>しており、リンク先は最新のものになります
@@ -278,8 +278,8 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
 <div class="scroller"><table><caption>表 26　下流側街路（x = 0.1〜0.3、z &lt; D）の鉛直方向の流れ</caption><thead><tr><th>中央棟</th><th>平均 w [m/s]</th><th>上向きの点</th><th>|w| の平均 [m/s]</th></tr></thead><tbody><tr><td>0D（中央棟なし）</td><td class="num">−0.3118</td><td class="num">0 %</td><td class="num">0.3118</td></tr><tr><td>1D（周囲と同じ）</td><td class="num">−0.2611</td><td class="num">29 %</td><td class="num">0.4104</td></tr><tr><td>2D（周囲の 2 倍）</td><td><b>+0.2022</b></td><td><b>78 %</b></td><td class="num">0.2576</td></tr></tbody></table></div><p class="capnote"><b>中央棟の高さで街路の換気の向きが変わる。</b>一様な街並みでは街路の空気は下降流で押さえ込まれ、高い建物があると上昇流に転じて上空と入れ替わる。ただし本解析は等温であり、<b>浮力による換気は含んでいない。</b>実際の通風設計では日射・外皮温度による浮力が加わる。</p>
 <h3>8.2 動画</h3>
 <p>静止画では流れの向きは分かるが、空気がどこから来てどこへ行くかは追いにくい。<b>一様な街並みと高い中央棟がある場合を並べる。</b>見せ方はケース A・B と揃えてある（尾を引く流線、等間隔に並べた点、静止流線の下地）。</p>
-<figure><video controls style="width:100%;max-width:940px;border:1px solid var(--rule)"><source src="../video/wind_caseC-1D-0.mp4" type="video/mp4"></video><figcaption><span class="n">図 10</span>　中央棟 1D（周囲と同じ高さ）・風向 0° の流れ</figcaption></figure>
-<figure><video controls style="width:100%;max-width:940px;border:1px solid var(--rule)"><source src="../video/wind_caseC-2D-0.mp4" type="video/mp4"></video><figcaption><span class="n">図 11</span>　中央棟 2D（周囲の 2 倍）・風向 0° の流れ</figcaption></figure>
+<p class="note"><b>図 10　中央棟 1D（周囲と同じ高さ）・風向 0° の流れ</b>：この動画は取り下げた（2026-09-26。改良した Kato–Launder 型の計算から作ったもの）。</p>
+<p class="note"><b>図 11　中央棟 2D（周囲の 2 倍）・風向 0° の流れ</b>：この動画は取り下げた（2026-09-26。改良した Kato–Launder 型の計算から作ったもの）。</p>
 <p class="capnote">上段は歩行者高さの水平面、<b>下段は街路を切った断面</b>。尾を引く線が空気の通り道で、等間隔に並べた点から流れ出し一定時間で元の位置に戻るため、画面のどこにも空白ができない。薄い細線は静止した流れの筋。色帯は<b>同じ高さの接近流</b>に対する比であり、断面を歩行者高さの1 点で規格化すると上空が一様に色付いて建物の影響が見えなくなる。</p>
 <h3>8.3 風圧係数 — 通風の駆動力</h3>
 <p class="note"><b>これは検証ではない。</b>ベンチマークの実測は歩行者高さの風速だけで、<b>圧力は測っていない。</b>したがって既往値と突き合わせられない。設計に使うための出力として載せる。</p>
