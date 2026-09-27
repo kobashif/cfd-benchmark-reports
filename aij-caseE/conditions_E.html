@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIJ ケース E（新潟）— 計算条件書 — CFD-AIJ-E-N01 版 2.0</title>
+<meta name="description" content="AIJ ケース E 計算条件書">
+<style>
+:root{--ground:#EEF1F4;--paper:#FFFFFF;--sunk:#F2F5F7;--ink:#14202B;
+--muted:#55697A;--faint:#8496A3;--rule:#C9D4DC;--rule2:#8FA3B0;
+--accent:#14406B;--good:#0E6B52;--warn:#9A5B06;--bad:#95261C;
+--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-size:15px;
+line-height:1.85;font-family:-apple-system,BlinkMacSystemFont,
+"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+font-feature-settings:"palt"}
+.sheet{max-width:960px;margin:0 auto;background:var(--paper);
+padding:52px 62px 84px;box-shadow:0 1px 3px rgba(20,32,43,.10)}
+.cover{border-bottom:3px double var(--rule2);padding-bottom:30px;margin-bottom:8px}
+.cover .kind{font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;
+color:var(--accent);margin-bottom:10px}
+.cover .vol{font-size:13px;color:var(--muted);margin-bottom:16px;
+font-weight:600;letter-spacing:.04em}
+.cover h1{font-size:27px;line-height:1.45;margin:0 0 6px;font-weight:700}
+.cover .sub{font-size:16.5px;color:var(--muted);margin:0 0 26px}
+.cover dl{display:grid;grid-template-columns:8.5em 1fr;gap:3px 16px;
+font-size:13.5px;margin:0}
+.cover dt{color:var(--faint)}
+.cover dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.series{font-size:13px;color:var(--muted);border:1px solid var(--rule);
+background:var(--sunk);padding:10px 16px;margin:18px 0 0}
+.series a{color:var(--accent)}
+h2{font-size:19px;margin:44px 0 12px;padding:10px 0 8px;
+border-top:2px solid var(--rule2);border-bottom:1px solid var(--rule)}
+h3{font-size:15.5px;margin:26px 0 8px;color:var(--accent)}
+h4{font-size:14px;margin:18px 0 6px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:1.5em}
+li{margin:0 0 4px}
+nav.toc{background:var(--sunk);border:1px solid var(--rule);padding:18px 26px;
+margin:26px 0 8px;font-size:14px}
+nav.toc h2{border:none;margin:0 0 8px;padding:0;font-size:15px}
+nav.toc ol{list-style:none;padding:0;margin:0;columns:2;column-gap:34px}
+nav.toc li{margin:0 0 3px;break-inside:avoid}
+nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--rule2)}
+nav.toc a:hover{color:var(--accent)}
+.scroller{overflow-x:auto;margin:6px 0 4px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--paper)}
+th,td{border:1px solid var(--rule);padding:7px 10px;text-align:left;
+vertical-align:top}
+th{background:var(--sunk);font-weight:600;font-size:12.5px;color:var(--muted)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+tbody tr:nth-child(even){background:#FAFCFD}
+caption{caption-side:top;text-align:left;font-size:13px;color:var(--muted);
+padding:10px 0 5px;font-weight:600}
+.capnote{font-size:12.5px;color:var(--faint);margin:3px 0 20px;line-height:1.7}
+figure{margin:16px 0 22px}
+img,video{max-width:100%;height:auto;border:1px solid var(--rule);
+background:var(--paper)}
+figcaption{font-size:13px;color:var(--muted);font-weight:600;margin-top:8px}
+figcaption .n{color:var(--accent)}
+.note{border:1px solid var(--rule);border-left:4px solid var(--accent);
+background:var(--sunk);padding:13px 17px;margin:16px 0;font-size:14px}
+.note.good{border-left-color:var(--good)}
+.note.warn{border-left-color:var(--warn)}
+.note.bad{border-left-color:var(--bad)}
+.note h4{margin:0 0 6px;font-size:14px}
+.note p:last-child{margin-bottom:0}
+span.good{color:var(--good);font-weight:600}
+span.warn{color:var(--warn);font-weight:600}
+span.bad{color:var(--bad);font-weight:600}
+code{font-family:var(--mono);font-size:.9em;background:var(--sunk);
+padding:1px 4px;border-radius:2px}
+.refs{font-size:13.5px}
+.refs li{margin-bottom:7px}
+.sig{margin-top:44px;border-top:1px solid var(--rule);padding-top:14px;
+font-size:12.5px;color:var(--faint);font-family:var(--mono)}
+@media print{body{background:#fff}.sheet{box-shadow:none;max-width:none;padding:0}
+h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
+@media(max-width:760px){.sheet{padding:30px 20px 60px}nav.toc ol{columns:1}
+.cover h1{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="sheet">
+<div class="cover">
+<div class="kind">数値流体解析 報告書 / CFD ANALYSIS REPORT</div>
+<h1>AIJ ケース E（新潟）— 計算条件書</h1>
+<p class="sub">付録 A</p>
+<dl><dt>文書番号</dt><dd>CFD-AIJ-E-N01</dd><dt>版数</dt><dd>2.0</dd><dt>発行日</dt><dd>2026-09-28</dd></dl>
+</div>
+<p><a href="index.html">← 本文にもどる</a></p>
+<h2 id="s1">1. モデルとソルバー</h2>
+<div class="scroller"><table><caption>表 1　モデルとソルバー</caption><thead><tr><th>項目</th><th>設定</th></tr></thead><tbody><tr><td>ソルバー</td><td>simpleFoam</td></tr><tr><td>乱流モデル</td><td>kEpsilon（係数は既定値）</td></tr><tr><td>圧力と速度の結合</td><td>SIMPLEC（consistent）、非直交補正 1 回</td></tr></tbody></table></div>
+<h2 id="s2">2. 境界条件</h2>
+<div class="scroller"><table><caption>表 2　境界ごとの型</caption><thead><tr><th>境界</th><th>U</th><th>k・ε</th><th>p</th></tr></thead><tbody><tr><td>流入面</td><td>fixedProfile（接近流の実測分布）</td><td>fixedProfile（同）</td><td>zeroGradient</td></tr><tr><td>流出面</td><td>inletOutlet</td><td>inletOutlet</td><td>fixedValue 0</td></tr><tr><td>側面・上端</td><td>slip</td><td>slip</td><td>slip</td></tr><tr><td>建物</td><td>noSlip</td><td>壁関数（kqRWallFunction・epsilonWallFunction）</td><td>zeroGradient</td></tr><tr><td>地表</td><td>noSlip</td><td>壁関数</td><td>zeroGradient</td></tr></tbody></table></div><p class="capnote">ν<sub>t</sub> は建物で nutkWallFunction。<b>地表の壁関数の種類と粗度の値は載せない。</b></p>
+<h2 id="s3">3. 離散化スキーム</h2>
+<pre>ddtSchemes { default steadyState; }
+gradSchemes { default cellLimited Gauss linear 1; }
+divSchemes
+{
+    default none;
+    div(phi,U) bounded Gauss linearUpwind grad(U);
+    div(phi,k) bounded Gauss limitedLinear 1;
+    div(phi,epsilon) bounded Gauss limitedLinear 1;
+    div((nuEff*dev2(T(grad(U))))) Gauss linear;
+}
+laplacianSchemes { default Gauss linear limited corrected 0.33; }
+interpolationSchemes { default linear; }
+snGradSchemes { default limited corrected 0.33; }
+wallDist { method meshWave; }</pre>
+<h2 id="s4">4. 格子の品質</h2>
+<div class="scroller"><table><caption>表 3　checkMesh</caption><thead><tr><th>セル数</th><th>判定</th><th>非直交度 最大 / 平均</th><th>歪み 最大</th><th>アスペクト比 最大</th></tr></thead><tbody><tr><td class="num">1,974,945</td><td>Mesh OK</td><td>67.6° / 4.5°</td><td class="num">4.00</td><td class="num">310</td></tr></tbody></table></div>
+<h2 id="s5">5. 収束の状態</h2>
+<div class="scroller"><table><caption>表 4　風向ごとの記録</caption><thead><tr><th>風向</th><th>反復数</th><th>緩和係数 U / k・ε</th><th>圧力の残差（最終）</th><th>到達状態</th></tr></thead><tbody><tr><td>N</td><td class="num">5,010</td><td class="num">0.9 / 0.7</td><td class="num">7.08e-04</td><td>解は定常（残差は判定値に届かない）</td></tr><tr><td>NE</td><td class="num">5,006</td><td class="num">0.9 / 0.7</td><td class="num">1.39e-03</td><td>解は定常（残差は判定値に届かない）</td></tr><tr><td class="num">E</td><td class="num">5,008</td><td class="num">0.9 / 0.7</td><td class="num">1.17e-03</td><td>打ち切り（残差が横ばい）</td></tr></tbody></table></div><p class="capnote"><b>残差の水準は風向どうしで比べない。</b>到達状態は報告する量の変化で決めている（本文 3 章）。</p>
+<div class="sig"><div>文書番号 CFD-AIJ-E-N01 ／ 版 2.0 ／ 発行 2026-09-28</div></div>
+</div>
+</body>
+</html>
