@@ -191,7 +191,7 @@ footer strong{color:var(--ink);font-weight:600}
           <span class="key">RMSE 0.1351</span>
         </span>
         <p class="desc">
-          風速と乱流エネルギーを 186 点で照合。乱流モデル 7 種を同じ格子・同じ停止基準で解き、
+          風速と乱流エネルギーを 186 点で照合。乱流モデル 8 種を同じ格子・同じ停止基準で解き、
           <strong>収束したものと打ち切ったものを分けて</strong>載せています。
           打ち切った 1 種は非定常計算で確かめ、後流が周期 0.24 秒で振れ続けることを示しました。
         </p>
@@ -204,11 +204,11 @@ footer strong{color:var(--ink);font-weight:600}
       <span>
         <span class="head">
           <span class="title">ケース B — 1:4:4 板状建物</span>
-          <span class="key">RMSE 0.1388</span>
+          <span class="key">RMSE 0.1094</span>
         </span>
         <p class="desc">
-          224 点で照合。ケース A と同じ 7 種・同じ手順で解き、形状比が変わったときに
-          モデルの順位がどう動くかを見ています。
+          224 点で照合。ケース A と同じ 8 種・同じ手順で解き、形状比が変わったときに
+          モデルの順位がどう動くかを見ています。<strong>最もよく合ったのは Kato&ndash;Launder 型 k-&epsilon;（原形）</strong>です。
         </p>
         <p class="src">風洞実験 &middot; Miyazaki &amp; Tominaga (2003)　｜　680,916 セル・格子 3 通り・Re 72,000</p>
       </span>
