@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AIJ ケース E（新潟）— 計算条件書 — CFD-AIJ-E-N01 版 2.1</title>
+<title>AIJ ケース E（新潟）— 計算条件書 — CFD-AIJ-E-N01 版 2.0</title>
 <meta name="description" content="AIJ ケース E 計算条件書">
 <style>
 :root{--ground:#EEF1F4;--paper:#FFFFFF;--sunk:#F2F5F7;--ink:#14202B;
@@ -88,7 +88,7 @@ h2{break-after:avoid}figure,table{break-inside:avoid}nav.toc{break-after:page}}
 <div class="kind">数値流体解析 報告書 / CFD ANALYSIS REPORT</div>
 <h1>AIJ ケース E（新潟）— 計算条件書</h1>
 <p class="sub">付録 A</p>
-<dl><dt>文書番号</dt><dd>CFD-AIJ-E-N01</dd><dt>版数</dt><dd>2.1</dd><dt>発行日</dt><dd>2026-09-28</dd></dl>
+<dl><dt>文書番号</dt><dd>CFD-AIJ-E-N01</dd><dt>版数</dt><dd>2.0</dd><dt>発行日</dt><dd>2026-09-28</dd></dl>
 </div>
 <p><a href="index.html">← 本文にもどる</a></p>
 <h2 id="s1">1. モデルとソルバー</h2>
@@ -113,8 +113,8 @@ wallDist { method meshWave; }</pre>
 <h2 id="s4">4. 格子の品質</h2>
 <div class="scroller"><table><caption>表 3　checkMesh</caption><thead><tr><th>セル数</th><th>判定</th><th>非直交度 最大 / 平均</th><th>歪み 最大</th><th>アスペクト比 最大</th></tr></thead><tbody><tr><td class="num">1,974,945</td><td>Mesh OK</td><td>67.6° / 4.5°</td><td class="num">4.00</td><td class="num">310</td></tr></tbody></table></div>
 <h2 id="s5">5. 収束の状態</h2>
-<div class="scroller"><table><caption>表 4　風向ごとの記録</caption><thead><tr><th>風向</th><th>反復数</th><th>緩和係数 U / k・ε</th><th>圧力の残差（最終）</th><th>到達状態</th></tr></thead><tbody><tr><td>N</td><td class="num">5,010</td><td class="num">0.9 / 0.7</td><td class="num">7.08e-04</td><td>解は定常（残差は判定値に届かない）</td></tr><tr><td>NE</td><td class="num">5,006</td><td class="num">0.9 / 0.7</td><td class="num">1.39e-03</td><td>解は定常（残差は判定値に届かない）</td></tr><tr><td class="num">E</td><td class="num">5,008</td><td class="num">0.9 / 0.7</td><td class="num">1.17e-03</td><td>打ち切り（残差が横ばい）</td></tr><tr><td>SE</td><td class="num">5,010</td><td class="num">0.9 / 0.7</td><td class="num">1.70e-03</td><td>打ち切り（残差が横ばい）</td></tr><tr><td>S</td><td class="num">5,010</td><td class="num">0.9 / 0.7</td><td class="num">6.08e-04</td><td>解は定常（残差は判定値に届かない）</td></tr><tr><td>SW</td><td class="num">5,009</td><td class="num">0.9 / 0.7</td><td class="num">1.48e-03</td><td>解は定常（残差は判定値に届かない）</td></tr><tr><td>W</td><td class="num">7,342</td><td class="num">0.9 / 0.7</td><td class="num">7.24e-04</td><td>解は定常（残差は判定値に届かない）</td></tr><tr><td>NW</td><td class="num">5,009</td><td class="num">0.9 / 0.7</td><td class="num">1.60e-03</td><td>解は定常（残差は判定値に届かない）</td></tr></tbody></table></div><p class="capnote"><b>残差の水準は風向どうしで比べない。</b>到達状態は報告する量の変化で決めている（本文 3 章）。</p>
-<div class="sig"><div>文書番号 CFD-AIJ-E-N01 ／ 版 2.1 ／ 発行 2026-09-28</div></div>
+<div class="scroller"><table><caption>表 4　風向ごとの記録</caption><thead><tr><th>風向</th><th>反復数</th><th>緩和係数 U / k・ε</th><th>圧力の残差（最終）</th><th>到達状態</th></tr></thead><tbody><tr><td>N</td><td class="num">5,010</td><td class="num">0.9 / 0.7</td><td class="num">7.08e-04</td><td>解は定常（残差は判定値に届かない）</td></tr><tr><td>NE</td><td class="num">5,006</td><td class="num">0.9 / 0.7</td><td class="num">1.39e-03</td><td>解は定常（残差は判定値に届かない）</td></tr><tr><td class="num">E</td><td class="num">5,008</td><td class="num">0.9 / 0.7</td><td class="num">1.17e-03</td><td>打ち切り（残差が横ばい）</td></tr></tbody></table></div><p class="capnote"><b>残差の水準は風向どうしで比べない。</b>到達状態は報告する量の変化で決めている（本文 3 章）。</p>
+<div class="sig"><div>文書番号 CFD-AIJ-E-N01 ／ 版 2.0 ／ 発行 2026-09-28</div></div>
 </div>
 </body>
 </html>
