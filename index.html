@@ -331,8 +331,8 @@ footer strong{color:var(--ink);font-weight:600}
           <span class="key">実測 3 機関</span>
         </span>
         <p class="desc">
-          夏期冷房の実大室。換気回数を 3 通りに変え、浮力生成項の有無まで比べています。
-          <strong>版 3.0 で共通の収束の規則で計算し直すと、どの条件も定常解は落ち着きませんでした。</strong>
+          夏期冷房の実大室。換気回数を 3 通りに変え、浮力を Boussinesq 近似で入れて 4 つの乱流モデルを比べています。
+          <strong>版 4.0：E3 の「剥離しない」は再現し、E1 の剥離は下流に出ます。際立って良いモデルはありません。解は実測の幅より小さく揺れ続けます。</strong>
         </p>
         <p class="src">実測 3 機関 &middot; Lemaire (1993)、Blomqvist・Heikkinen・Fossdal　｜　244,200 セル</p>
       </span>
