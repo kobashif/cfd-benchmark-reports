@@ -11,6 +11,7 @@ OpenFOAM による室内気流・通風 CFD の検証レポート。
 | [Annex 20 室内気流](annex20-2d/) | 室内気流（等温） | IEA Annex 20 二次元テストケース 公表 LDV 実測値 |
 | [Annex 20 テストケース E](annex20-caseE/) | 混合対流（非等温） | IEA Annex 20 Subtask 1 報告書、実測 3 機関 |
 | [RP-1133 置換換気オフィス](rp1133-dx08/) | 置換換気（非等温） | Yuan et al. (1999) 実大試験室の実測、Srebric & Chen (2002) |
+| [MINIBAT 天井近くの噴流と窓の日射](minibat/) | 天井近くの水平噴流（等温・温風・冷風）、窓の日射と快適性 | Gresse ほか (2020) Data in Brief の実測（CC BY 4.0）、Kuznik (2005) |
 
 ## 資料の取り扱い
 
