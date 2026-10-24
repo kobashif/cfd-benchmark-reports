@@ -1,0 +1,1035 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>建築ガラスの熱と日射 — CFD-GLAZING-001 版 1.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+Antique:wght@500;700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* レイアウト：1 本の読み物の列（最大 980px）に、計算器と 3D を差し込む。断面図の色（外気＝冷、室内＝暖、ガラス＝緑の小口）を全体の配色の軸にする */
+:root {
+  --bg: #f2f5f4;
+  --surface: #ffffff;
+  --ink: #17211f;
+  --muted: #586764;
+  --line: #d3dcda;
+  --glass: #2f8f7f;      /* フロートガラスの小口の緑 */
+  --glass-soft: #d7ece7;
+  --sun: #d98a12;        /* 直達日射 */
+  --sky: #3f7fc6;        /* 拡散日射 */
+  --heat: #c4473a;       /* 熱の流れ・室内側 */
+  --cold: #3b78a8;
+  --coat: #8a5bc4;       /* Low-E 膜 */
+  --grid: #e3e9e7;
+  --f-display: "Zen Kaku Gothic Antique", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --f-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1615; --surface: #172120; --ink: #e3ecea; --muted: #97a8a4; --line: #2c3b38;
+    --glass: #5cc3ae; --glass-soft: #1d3530; --sun: #f0a733; --sky: #6fa8e6; --heat: #ef7666;
+    --cold: #6fa8d6; --coat: #b08ae6; --grid: #22302d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1615; --surface: #172120; --ink: #e3ecea; --muted: #97a8a4; --line: #2c3b38;
+  --glass: #5cc3ae; --glass-soft: #1d3530; --sun: #f0a733; --sky: #6fa8e6; --heat: #ef7666;
+  --cold: #6fa8d6; --coat: #b08ae6; --grid: #22302d; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15.5px; line-height: 1.8;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 64px;
+}
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+header.hero { padding-block: 40px 8px; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 32px; align-items: center; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .12em; color: var(--glass); text-transform: uppercase; }
+h1 { font-family: var(--f-display); font-weight: 900; font-size: clamp(30px, 5vw, 46px); line-height: 1.2; margin: 8px 0 16px; text-wrap: balance; }
+h2 { font-family: var(--f-display); font-weight: 700; font-size: 26px; line-height: 1.35; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--f-display); font-weight: 700; font-size: 18px; margin: 0; }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--muted); font-size: 16.5px; }
+dl.meta { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; margin: 14px 0 0; font-size: 13px; }
+dl.meta dt { color: var(--muted); } dl.meta dd { margin: 0; font-family: var(--f-mono); }
+section { display: flex; flex-direction: column; gap: 20px; }
+.sec-head { display: flex; flex-direction: column; gap: 6px; border-top: 2px solid var(--ink); padding-top: 14px; }
+.sec-head .eyebrow { color: var(--muted); }
+.toc { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 14px; }
+.toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
+.toc a:hover, .toc a:focus-visible { border-color: var(--glass); color: var(--glass); }
+a { color: var(--glass); }
+:focus-visible { outline: 2px solid var(--glass); outline-offset: 2px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { font-weight: 700; color: var(--muted); font-size: 12.5px; white-space: nowrap; }
+td.num, th.num { text-align: right; font-family: var(--f-mono); white-space: nowrap; }
+.formula { max-width: 100%; box-sizing: border-box; font-family: var(--f-mono); font-size: 14px; background: var(--glass-soft); border-left: 3px solid var(--glass); padding: 12px 14px; line-height: 2; overflow-x: auto; white-space: nowrap; }
+.formula .c { font-family: var(--f-body); color: var(--muted); font-size: 13px; white-space: normal; }
+.note { font-size: 13px; color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; max-width: 100%; font-size: 12.5px; color: var(--muted); }
+select, input[type="number"], input[type="date"] {
+  font: inherit; font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 5px 8px; min-width: 0; max-width: 100%;
+}
+input[type="range"] { accent-color: var(--sun); width: 100%; }
+.layers { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.layer { border: 1px solid var(--line); border-radius: 4px; padding: 10px; display: flex; flex-direction: column; gap: 6px; background: var(--bg); min-width: 0; }
+.layer.pane { border-left: 4px solid var(--glass); }
+.layer.gap { border-left: 4px dashed var(--sky); }
+.layer .tag { font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); letter-spacing: .06em; }
+.big { display: flex; flex-wrap: wrap; gap: 28px; }
+.big .k { display: flex; flex-direction: column; }
+.big .v { font-family: var(--f-mono); font-size: 30px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.big .u { font-size: 12.5px; color: var(--muted); }
+svg text { font-family: var(--f-body); fill: var(--muted); font-size: 11.5px; }
+svg .ax { stroke: var(--line); fill: none; }
+svg .gr { stroke: var(--grid); fill: none; }
+.c-sun { stroke: var(--sun); fill: none; stroke-width: 2.2; }
+.c-sky { stroke: var(--sky); fill: none; stroke-width: 2.2; }
+.c-heat { stroke: var(--heat); fill: none; stroke-width: 2.2; }
+.c-glass { stroke: var(--glass); fill: none; stroke-width: 2.2; }
+.c-coat { stroke: var(--coat); fill: none; stroke-width: 2.2; }
+.c-ink { stroke: var(--ink); fill: none; stroke-width: 1.4; }
+.dash { stroke-dasharray: 5 4; }
+.f-sun { fill: var(--sun); } .f-sky { fill: var(--sky); } .f-heat { fill: var(--heat); } .f-glass { fill: var(--glass); }
+.f-coat { fill: var(--coat); } .f-line { fill: var(--line); } .f-ink { fill: var(--ink); } .f-cold { fill: var(--cold); }
+.op { opacity: .55; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 14px; height: 3px; margin-right: 6px; vertical-align: middle; background: var(--c); }
+#view3d { position: relative; width: 100%; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 6px; overflow: hidden; background: var(--bg); border: 1px solid var(--line); }
+#view3d canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+#view3d .fallback { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); padding: 20px; text-align: center; }
+.tags3d { position: absolute; inset: 0; pointer-events: none; }
+.tags3d div { position: absolute; transform: translate(-50%, -50%); font-size: 11.5px; padding: 1px 6px; border-radius: 3px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); white-space: nowrap; }
+.pill { display: inline-block; font-family: var(--f-mono); font-size: 12px; padding: 1px 8px; border-radius: 99px; background: var(--glass-soft); color: var(--glass); }
+ol.src { font-size: 13px; color: var(--muted); padding-left: 20px; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+ul.plain { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; max-width: 72ch; }
+@media (max-width: 760px) {
+  header.hero { grid-template-columns: minmax(0, 1fr); }
+  .grid2 { grid-template-columns: minmax(0, 1fr); }
+  #view3d { aspect-ratio: 4 / 3; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="hero">
+  <div>
+    <div class="eyebrow">Glazing · U-value · Solar gain</div>
+    <h1>建築ガラスの熱と日射</h1>
+    <p class="lead">ガラスの熱貫流率 U [W/(m²·K)] を、ガラス・中空層・表面の熱抵抗を足し合わせて求める方法と、直達日射・拡散日射がガラスを通って室内に入る割合（日射熱取得率 g）を、図と 3D の断面で確かめられるようにまとめました。数値はこのページの中で計算しています。</p>
+    <dl class="meta"><dt>文書番号</dt><dd>CFD-GLAZING-001</dd><dt>版数</dt><dd>1.0</dd><dt>発行日</dt><dd>2026-10-15</dd></dl>
+  </div>
+  <svg id="heroFig" viewBox="0 0 320 220" role="img" aria-label="複層ガラスの断面と、熱の流れ・日射の模式図"></svg>
+</header>
+
+<nav class="toc" aria-label="目次">
+  <a href="#data">1 ガラスのデータ</a>
+  <a href="#uvalue">2 熱貫流率の求め方</a>
+  <a href="#view">3 3D の断面</a>
+  <a href="#solar">4 直達日射と拡散日射</a>
+  <a href="#verify">5 カタログ性能を再現できるか</a>
+  <a href="#lat">6 遮熱型と取得型の境目</a>
+  <a href="#notes">前提と限界・出典</a>
+</nav>
+
+<section id="data">
+  <div class="sec-head"><div class="eyebrow">1</div><h2>ガラスのデータ</h2></div>
+  <p>公表されている代表的な値（板硝子協会、日本板硝子、AGC）と、このページの計算で同じ構成を求めた値を並べました。計算値は 2 章の方法（EN 673 の条件）と 4 章の光学モデルによるもので、製品の正式な値ではありません。</p>
+  <div class="panel">
+    <div class="scroll">
+      <table id="dataTable">
+        <thead><tr>
+          <th>ガラスの種類</th><th>構成（外 → 内）</th>
+          <th class="num">U 公表値</th><th class="num">U 計算</th>
+          <th class="num">g 公表値</th><th class="num">g 計算（垂直入射）</th><th>公表値の出典</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="note">AGC の値：ニュートラルクリア 71/38 は現行の仕様・性能表の値です。同じ表では、構成を SBQ4 + Ar14 + FL4 にすると U 1.1、SBQ5 + Ar12 + FL5 にすると U 1.3 になります。ピュアクリアも現行の仕様・性能表の値です（2012 年の発売時の発表では η 0.60）。アクアグリーンは 2012 年の発売時の値で、現行の値は確かめられていません。AGC のトリプルガラス（Low-E 2 枚＋透明 1 枚）は、構成により U 0.77〜0.90、ニュートラルクリア 71/38 の η 0.32 と公表されています。ビル用（6 mm 程度の厚いガラス）は U 1.3 の品種が中心です。</p>
+    <p class="note">U：熱貫流率 [W/(m²·K)]。g：日射熱取得率（入射した日射のうち、透過と、ガラスに吸収されて室内へ流れる分を合わせた割合）。「計算」は行をクリックすると 2 章の計算器に読み込みます。透明複層の g は計算のほうが 0.05 高く出ます。公表値の算定条件（JIS の表面熱伝達率など）と、このページの簡略な光学モデルの差によるものとみられます。ピュアクリアの計算値が U で 0.14〜0.16、g で 0.09 高いのは、Low-E 膜に一般的な代表値を置いているためで、製品の膜の値を使えば公表値を再現できます（5 章）。</p>
+  </div>
+</section>
+
+<section id="uvalue">
+  <div class="sec-head"><div class="eyebrow">2</div><h2>熱貫流率の求め方</h2></div>
+  <p>ガラス窓の中央部を、外気から室内まで熱が順に通り抜ける「直列の抵抗」と考えます。外表面、ガラス、中空層、ガラス、内表面のそれぞれの熱抵抗 R [m²·K/W] を足し、その逆数が熱貫流率です。中空層では、放射（ガラス面どうしの赤外線のやり取り）と、気体の伝導・対流の 2 つの経路が並列に働きます。</p>
+  <div class="formula">
+    U = 1 / ( 1/h<sub>e</sub> + Σ d<sub>j</sub>/λ<sub>g</sub> + Σ 1/h<sub>s,k</sub> + 1/h<sub>i</sub> )<br>
+    h<sub>s</sub> = h<sub>r</sub> + h<sub>g</sub>　　h<sub>r</sub> = 4σT<sub>m</sub>³ · (1/ε<sub>1</sub> + 1/ε<sub>2</sub> − 1)<sup>−1</sup>　　h<sub>g</sub> = Nu · λ<sub>gas</sub> / s<br>
+    Nu = 0.035 (Gr·Pr)<sup>0.38</sup>（1 未満なら 1）　Gr = 9.81 s³ ΔT ρ² / (T<sub>m</sub> μ²)　Pr = μ c<sub>p</sub> / λ<sub>gas</sub><br>
+    <span class="c">条件（EN 673）：h<sub>e</sub> = 25 W/(m²·K)、h<sub>i</sub> = 3.6 + 4.4 ε<sub>i</sub>/0.837、平均温度 T<sub>m</sub> = 283 K、ガラス両面の温度差 15 K、λ<sub>g</sub> = 1.0 W/(m·K)。気体の物性は ISO 15099 の温度の一次式。s は中空層の幅、ε は中空層に面するガラス面の放射率（透明 0.837、Low-E 0.04〜0.12）。</span>
+  </div>
+
+  <div class="panel">
+    <div class="controls">
+      <label class="field" for="preset">例を読み込む
+        <select id="preset"></select>
+      </label>
+      <label class="field" for="npanes">ガラスの枚数
+        <select id="npanes"><option value="1">1 枚（単板）</option><option value="2">2 枚（複層）</option><option value="3">3 枚（トリプル）</option></select>
+      </label>
+    </div>
+    <div class="layers" id="layers" aria-label="ガラスと中空層の構成"></div>
+    <div class="big" id="bigU"></div>
+    <div>
+      <h3>熱抵抗の内訳</h3>
+      <p class="note">帯の長さが熱抵抗の大きさです。長いほど熱を通しにくい部分です。</p>
+    </div>
+    <div class="scroll"><svg id="resBar" viewBox="0 0 900 120" style="width:100%;min-width:560px" role="img" aria-label="熱抵抗の内訳"></svg></div>
+    <div class="scroll">
+      <table id="gapTable"><thead><tr>
+        <th>中空層</th><th class="num">ΔT [K]</th><th class="num">Gr</th><th class="num">Pr</th><th class="num">Nu</th>
+        <th class="num">h<sub>g</sub></th><th class="num">h<sub>r</sub></th><th class="num">h<sub>s</sub></th><th class="num">1/h<sub>s</sub></th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+    <p class="note">h の単位は W/(m²·K)、1/h<sub>s</sub> は m²·K/W。Nu = 1 は、中空層の空気がほとんど動かず、伝導だけで熱が伝わる状態です。複層ガラスの U を下げるのは、放射を抑える Low-E 膜（h<sub>r</sub> を約 3.7 から 0.2 へ）と、熱を伝えにくい気体（アルゴン、クリプトン）です。</p>
+  </div>
+
+  <div class="panel">
+    <h3>中空層の幅と気体による違い</h3>
+    <p>いま選んでいる構成の中空層の幅を変えたときの U です（3 枚の場合は 2 つの層を同じ幅にしています）。幅が広がると伝導は減りますが、ある幅を超えると中で空気が回り始め（Nu &gt; 1）、U はそれ以上下がらなくなります。最も低くなる幅は気体によって違います。</p>
+    <div class="scroll"><svg id="gapChart" viewBox="0 0 640 300" style="width:100%;min-width:480px" role="img" aria-label="中空層の幅と熱貫流率"></svg></div>
+    <div class="legend" id="gapLegend"></div>
+  </div>
+</section>
+
+<section id="view">
+  <div class="sec-head"><div class="eyebrow">3</div><h2>3D の断面</h2></div>
+  <p>2 章で選んだ構成を、厚さ方向を実寸（mm）で立体にしました。ドラッグで回転、ピンチやホイールで拡大できます。赤い折れ線は、外気 0 ℃・室内 20 ℃ のときの温度の分布です（高さ方向が温度）。黄色の矢印は 4 章で選んだ時刻の直達日射で、透過する分は太さで表しています。青い小さな矢印は空から来る拡散日射です。</p>
+  <div id="view3d"><div class="tags3d" id="tags3d"></div></div>
+  <div class="controls">
+    <label class="field" for="show3dHeat"><span><input type="checkbox" id="show3dHeat" checked> 温度の分布</span></label>
+    <label class="field" for="show3dSun"><span><input type="checkbox" id="show3dSun" checked> 日射</span></label>
+    <div class="legend">
+      <span style="--c: var(--glass)">ガラス</span><span style="--c: var(--coat)">Low-E 膜</span>
+      <span style="--c: var(--heat)">温度</span><span style="--c: var(--sun)">直達日射</span><span style="--c: var(--sky)">拡散日射</span>
+    </div>
+  </div>
+</section>
+
+<section id="solar">
+  <div class="sec-head"><div class="eyebrow">4</div><h2>直達日射と拡散日射</h2></div>
+  <p>太陽から真っすぐ届く<strong>直達日射</strong>は、窓に当たる角度（入射角 θ）が時刻とともに変わります。ガラスは入射角が大きいほど表面で反射する割合が増えるので、同じ強さの日射でも斜めから当たると通りにくくなります。空全体と地面から届く<strong>拡散日射</strong>はあらゆる方向から来るので、全方向で平均した透過率（半球平均）で扱います。</p>
+
+  <div class="grid2">
+    <div class="panel">
+      <h3>入射角による透過率と日射熱取得率</h3>
+      <div class="scroll"><svg id="angleChart" viewBox="0 0 460 300" style="width:100%;min-width:340px" role="img" aria-label="入射角と透過率"></svg></div>
+      <div class="legend">
+        <span style="--c: var(--sun)">日射熱取得率 g(θ)</span><span style="--c: var(--glass)">透過率 τ(θ)</span>
+        <span style="--c: var(--sky)">拡散日射に対する g（半球平均）</span>
+      </div>
+      <p class="note">ガラスの表面での反射はフレネルの式、ガラスの中での吸収はランベルト・ベールの式で求めています。50° を超えると急に下がります。半球平均の値は、およそ入射角 60° のときの値に近くなります。</p>
+    </div>
+    <div class="panel">
+      <h3>ガラスに入った日射の行き先（入射角 <span id="thLabel">0°</span>）</h3>
+      <svg id="splitBar" viewBox="0 0 460 150" style="width:100%" role="img" aria-label="日射の透過・反射・吸収の割合"></svg>
+      <label class="field" for="thSlider">入射角 θ
+        <input type="range" id="thSlider" min="0" max="89" value="0">
+      </label>
+      <p class="note">吸収された分は、ガラスの温度を上げてから外と室内へ分かれて流れます。室内へ流れる割合は、そのガラスより外側の熱抵抗 ÷ 全体の熱抵抗です。外側のガラスに Low-E 膜を付けると、吸収した熱の多くは外へ逃げます（遮熱型）。</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>1 日の窓面日射と室内に入る熱（晴天日のモデル）</h3>
+    <div class="controls">
+      <label class="field" for="site">場所
+        <select id="site">
+          <option value="35.68,139.77">東京</option><option value="34.69,135.50">大阪</option>
+          <option value="43.06,141.35">札幌</option><option value="26.21,127.68">那覇</option>
+        </select>
+      </label>
+      <label class="field" for="day">日
+        <select id="day">
+          <option value="6,21">夏至（6/21）</option><option value="3,20">春分（3/20）</option>
+          <option value="9,23">秋分（9/23）</option><option value="12,22">冬至（12/22）</option>
+          <option value="8,5">盛夏（8/5）</option><option value="10,14">10/14</option>
+        </select>
+      </label>
+      <label class="field" for="orient">窓の向き
+        <select id="orient">
+          <option value="0">南</option><option value="-45">南東</option><option value="-90">東</option>
+          <option value="45">南西</option><option value="90">西</option><option value="180">北</option>
+        </select>
+      </label>
+      <label class="field" for="Patm">大気透過率 P
+        <select id="Patm"><option value="0.6">0.6（かすみ）</option><option value="0.7" selected>0.7（晴れ）</option><option value="0.8">0.8（よく晴れ）</option></select>
+      </label>
+      <label class="field" style="flex:1 1 220px" for="hour">時刻 <span id="hourLabel"></span>
+        <input type="range" id="hour" min="5" max="19" step="0.25" value="10">
+      </label>
+    </div>
+    <div class="big" id="bigSolar"></div>
+    <div class="scroll"><svg id="dayChart" viewBox="0 0 900 330" style="width:100%;min-width:560px" role="img" aria-label="1 日の窓面日射と室内に入る熱"></svg></div>
+    <div class="legend">
+      <span style="--c: var(--sun)">窓面の直達日射</span><span style="--c: var(--sky)">窓面の拡散日射（天空＋地面）</span>
+      <span style="--c: var(--heat)">室内に入る熱（直達分＋拡散分）</span>
+    </div>
+    <div class="scroll"><table id="dayTable"><thead><tr>
+      <th></th><th class="num">直達</th><th class="num">拡散</th><th class="num">合計</th>
+    </tr></thead><tbody></tbody></table></div>
+    <p class="note">直達日射 I<sub>DN</sub> はブーゲの式 I<sub>0</sub>P<sup>1/sin h</sup>、水平面の天空日射はベルラーゲの式で求め、窓面（鉛直）には天空日射の 1/2 と、地面の反射（反射率 0.2）の 1/2 が届くとしました。室内に入る熱は、直達分に g(θ)、拡散分に半球平均の g を掛けています。雲や周りの建物の影は考えていません。</p>
+  </div>
+  <p id="solarStory"></p>
+</section>
+
+<section id="verify">
+  <div class="sec-head"><div class="eyebrow">5</div><h2>カタログ性能を再現できるか</h2></div>
+  <p>1 章の表では、計算値と公表値が合う製品と、ずれる製品があります。ずれが計算の方法によるのか、置いた値によるのかを、3 段に分けて確かめました。</p>
+  <h3>5.1 計算の書き間違い</h3>
+  <p>2 章の熱貫流率の計算を、このページのスクリプトとは別に書いた計算（同じ EN 673 の式）と、1 章の 13 の構成すべてで突き合わせました。差は最大 0.0003 W/(m²·K) で、書き間違いは見つかりませんでした。これは式を正しく組んだことの確認で、式そのものが公表値の算定条件と同じであることの確認ではありません。</p>
+  <h3>5.2 熱貫流率 U</h3>
+  <p>Low-E 膜の放射率は、製品ごとの値が公表されていません。そこで、公表値の U に合う放射率を逆に求め、ありうる値かどうかを見ました。公表値は 0.1 刻みなので、四捨五入の幅に入る放射率の範囲も示します。</p>
+  <div class="panel"><div class="scroll"><table>
+    <thead><tr><th>製品</th><th>構成</th><th class="num">U 公表値</th><th class="num">U 計算（代表値）</th><th class="num">公表値に合う放射率</th><th class="num">四捨五入の幅に入る範囲</th></tr></thead>
+    <tbody>
+      <tr><td>Low-E 複層（遮熱型）</td><td>Low-E3（#2）+ A12 + FL3</td><td class="num">1.6</td><td class="num">1.64</td><td class="num">0.026</td><td class="num">0.007〜0.045</td></tr>
+      <tr><td>AGC ニュートラルクリア 71/38</td><td>SBQ3（#2）+ Ar16 + FL3</td><td class="num">1.1</td><td class="num">1.12</td><td class="num">0.035</td><td class="num">0.021〜0.051</td></tr>
+      <tr><td>日本板硝子（2013）アルゴン</td><td>Low-E3（#2）+ Ar12 + FL3</td><td class="num">1.2</td><td class="num">1.26</td><td class="num">0.020</td><td class="num">0.005〜0.036</td></tr>
+      <tr><td>Low-E 複層（取得型）</td><td>FL3 + A12 + Low-E3（#3）</td><td class="num">1.9</td><td class="num">1.84</td><td class="num">0.149</td><td class="num">0.126〜0.172</td></tr>
+      <tr><td>AGC ピュアクリア</td><td>FL3 + A12 + Low-E3（#3）</td><td class="num">1.7</td><td class="num">1.84</td><td class="num">0.064</td><td class="num">0.045〜0.084</td></tr>
+      <tr><td>AGC ピュアクリア 77/52</td><td>FL3 + Ar16 + Low-E3（#3）</td><td class="num">1.2</td><td class="num">1.36</td><td class="num">0.066</td><td class="num">0.051〜0.082</td></tr>
+    </tbody></table></div>
+    <p class="note">「U 計算（代表値）」は、このページの代表値（遮熱型の膜 0.04、取得型の膜 0.12）で求めた値。放射率は中空層に面する膜の値で、ほかの条件は 2 章と同じ。</p>
+  </div>
+  <ul class="plain">
+    <li><strong>遮熱型</strong>：公表値に合う放射率は 0.02〜0.04 で、銀を使う Low-E 膜としてありうる値です。代表値 0.04 は、日本板硝子（2013）のアルゴン 12 mm を除いて、四捨五入の幅に入ります。</li>
+    <li><strong>AGC ピュアクリア</strong>：空気 12 mm とアルゴン 16 mm の 2 つの構成が、どちらも放射率 約 0.065 で公表値に合います。1 つの膜の値で 2 つの公表値を同時に説明できるので、公表値は 2 章の方法で再現できると言えます。代表値 0.12 は、板硝子協会の取得型（1.9）に合う 0.13〜0.17 に近い値で、ピュアクリアの膜には大きすぎます。</li>
+  </ul>
+  <h3>5.3 日射熱取得率 η</h3>
+  <p>AGC の仕様・性能表には、η のほかに日射透過率と日射反射率が載っています。この 2 つに合うよう膜の透過率と反射率を決め、放射率は 5.2 の値を置いて、2 章と 4 章の方法で η を計算しました。η の公表値は、合わせるのに使っていません。</p>
+  <div class="panel"><div class="scroll"><table>
+    <thead><tr><th>製品</th><th>構成</th><th class="num">日射透過率 公表 / 計算</th><th class="num">日射反射率 公表 / 計算</th><th class="num">U 公表 / 計算</th><th class="num">η 公表 / 計算</th></tr></thead>
+    <tbody>
+      <tr><td>AGC ニュートラルクリア 71/38</td><td>SBQ3（#2）+ Ar16 + FL3</td><td class="num">0.355 / 0.355</td><td class="num">0.421 / 0.420</td><td class="num">1.1 / 1.10</td><td class="num"><strong>0.38 / 0.384</strong></td></tr>
+      <tr><td>AGC ピュアクリア</td><td>FL3 + A12 + Low-E3（#3）</td><td class="num">0.509 / 0.510</td><td class="num">0.329 / 0.329</td><td class="num">1.7 / 1.70</td><td class="num"><strong>0.58 / 0.583</strong></td></tr>
+      <tr><td>AGC ピュアクリア 77/52</td><td>FL3 + Ar16 + Low-E3（#3）</td><td class="num">0.509 / 0.510</td><td class="num">0.329 / 0.330</td><td class="num">1.2 / 1.20</td><td class="num"><strong>0.59 / 0.586</strong></td></tr>
+    </tbody></table></div>
+    <p class="note">膜の値（垂直入射）：ニュートラルクリアの膜 τ 0.398・ρ 0.408・放射率 0.035、ピュアクリアの膜 τ 0.575・ρ 0.328・放射率 0.065。ピュアクリアの 2 つの構成は同じ膜の値。</p>
+  </div>
+  <p>3 製品とも、η の公表値を 0.01 以内で再現しました。吸収された日射のうち室内へ流れる分の扱い（4 章）が、公表値の算定と同じ結果を与えていることになります。</p>
+  <h3>5.4 わかったこと</h3>
+  <ul class="plain">
+    <li>製品の膜の値を使えば、このページの方法で AGC の 3 製品の U と η の公表値を再現できます。1 章の表で計算値がずれるのは、方法ではなく、膜に一般的な代表値を置いているためです。</li>
+    <li>1 章と 3・4 章の計算器は、膜の違いを見せるために代表値のままにしています。製品の値が要る場合は公表値を使ってください。</li>
+  </ul>
+  <h3>5.5 確かめられなかったこと</h3>
+  <ul class="plain">
+    <li>公表値の算定に使われる JIS R 3107（熱貫流率）・JIS R 3106（日射熱取得率）の条件（表面熱伝達率など）とは突き合わせていません。このページは EN 673 の条件で計算しています。屋外の表面熱伝達率を 25 から 23 W/(m²·K) にすると、複層ガラスの U は 0.01〜0.03 下がります（単板は 0.12）。</li>
+    <li>アクアグリーン（E を含む）は、現行の仕様・性能表の値を確かめられませんでした。1 章の値は 2012 年の発売時の発表です。</li>
+    <li>板硝子協会と日本板硝子（2013）の値は、ガラスの厚さと膜の種類が資料に書かれていないため、構成を推定して比べています。</li>
+    <li>トリプルガラスと、入射角による η の変化（4 章）は、比べられる公表値が無く、確かめていません。</li>
+  </ul>
+</section>
+
+<section id="lat">
+  <div class="sec-head"><div class="eyebrow">6</div><h2>遮熱型と取得型は北緯どこで入れ替わるか</h2></div>
+  <p>同じアルゴン 16 mm の Low-E 複層で、遮熱型（AGC ニュートラルクリア 71/38：U 1.1、η 0.38）を取得型（ピュアクリア 77/52：U 1.2、η 0.59。いずれも AGC の現行の仕様・性能表）に替えたとき、1 年の暖房と冷房のエネルギーがどれだけ変わるかを、窓 1 m² あたりで都市ごとに求めました。縦軸がマイナスなら取得型、プラスなら遮熱型が有利です。</p>
+  <div class="panel">
+    <div class="controls">
+      <label class="field" for="latOrient">窓の向き
+        <select id="latOrient"><option value="南">南</option><option value="東">東・西</option><option value="北">北</option></select>
+      </label>
+    </div>
+    <div class="scroll"><svg id="latChart" viewBox="0 0 900 360" style="width:100%;min-width:560px" role="img" aria-label="緯度と、取得型にしたときの年間エネルギーの増減"></svg></div>
+    <div class="legend"><span style="--c: var(--heat)">基準の条件</span><span style="--c: var(--line)">条件を変えた 6 通りの幅</span></div>
+    <div class="scroll"><table id="latTable"><thead><tr>
+      <th>都市</th><th class="num">北緯</th><th class="num">暖房負荷の増減</th><th class="num">冷房負荷の増減</th><th class="num">電力の増減（基準）</th><th class="num">電力の増減（6 通りの幅）</th><th>有利な型</th>
+    </tr></thead><tbody></tbody></table></div>
+    <p class="note">単位：負荷は kWh/(m²·年)（熱）、電力は kWh/(m²·年)。いずれも「取得型 − 遮熱型」で、窓ガラス 1 m² あたり。</p>
+  </div>
+  <h3>結果</h3>
+  <ul class="plain">
+    <li><strong>南向き</strong>：北緯 <strong>約 30° 以北</strong>（九州南部から北海道まで）で取得型が有利です。6 通りの条件のどれでも向きは変わりません。遮熱型が有利なのは、暖房がほとんど要らない奄美（28.4°）・沖縄（26.2°）だけです。入れ替わりは北緯 28〜31° の間にあります。</li>
+    <li><strong>東・西向き</strong>：入れ替わりは北緯 <strong>約 36〜38°</strong> で、関東の太平洋側がちょうど境目（東京は条件により −6〜+3）です。九州・近畿・日本海側の新潟（37.9°）では遮熱型、仙台（38.3°）・盛岡・北海道では取得型が有利です。冬の日照が少ない日本海側では、境目が北へずれます。</li>
+    <li><strong>北向き</strong>：直達日射がほとんど当たらないので、差は小さくなります。九州から北海道までは、基準の条件で年 ±2.2 kWh/m² 以内、6 通りの条件を含めても −3.9〜+4.1 kWh/m² です。U の小さいほうを選べば十分です。ただし沖縄（+8.1）・奄美（+6.3）は、北向きでも冷房の分だけ遮熱型が有利です。</li>
+    <li>つまり、境目は「北緯何度」の 1 本の線ではなく、<strong>窓の向きごとに違い</strong>、同じ緯度でも<strong>冬の日照（太平洋側か日本海側か）</strong>で動きます。「南面は取得型、東西は温暖地では遮熱型」という実務の目安と合う結果です。</li>
+  </ul>
+  <h3>計算の方法と限界</h3>
+  <ul class="plain">
+    <li>各月の 15 日の晴天日射（4 章のモデル、P = 0.7）に、冬・夏の晴天比（太平洋側の冬 0.55〜0.62、日本海側の冬 0.30 など、日照の傾向からの概算）を掛け、月の日数を掛けて窓面の日射を出しました。入射角による η の変化は 4 章の光学モデルの形を使い、垂直入射の値を公表値にそろえています。</li>
+    <li>月平均気温は気象庁の平年値（1991〜2020 年）の概数です。月平均気温が 15 ℃ を下回る分だけ暖房月（10 ℃ で全量）、21 ℃ を上回る分だけ冷房月（25 ℃ で全量）とし、暖房月の日射は 90 % が暖房に役立ち、冷房月の日射はすべて冷房負荷になるとしました。U の差による熱損失は室温 20 ℃ で数えています。</li>
+    <li>電力は、暖房の効率 COP 3、冷房 COP 4 で換算しました。幅の 6 通りは、暖房 COP 2（灯油など）、暖房 COP 4・冷房 COP 3、冬の日射を 1 割少なく、冷房期を長く、暖房期を短く、を変えたものです。</li>
+    <li>実際の気象データ（拡張アメダスなど）による時刻ごとの計算ではありません。庇・軒の出、カーテン、建物の断熱性能と内部発熱、夏の過熱のしやすさ（快適さ）は入っていません。東と西は同じ扱いで、午後に気温が高い西日の不利は含まれていません（実際は西のほうが遮熱型寄り）。庇がある南窓では夏の日射が減るので、取得型がさらに有利になります。</li>
+  </ul>
+  <p class="note">参考：住宅の省エネ基準では、JIS R 3106 によるガラス中央部の日射熱取得率が 0.49 以下を日射遮蔽型、0.50 以上を日射取得型と分けています（<a href="https://www.kenken.go.jp/becc/documents/house/Manual_SolarHeatGain_20130712.pdf">建築研究所の計算マニュアル</a>）。南窓を取得型、ほかを遮蔽型とする考え方は <a href="https://xtech.nikkei.com/atcl/nxt/column/18/01390/00004/">日経クロステックの記事</a> などにもあります。</p>
+</section>
+
+<section id="notes">
+  <div class="sec-head"><div class="eyebrow">付録</div><h2>前提と限界・出典</h2></div>
+  <ul class="plain">
+    <li>熱貫流率はガラス中央部の値です。サッシ（枠）とスペーサーの熱橋を含む窓全体の U<sub>w</sub> は、これより大きくなります。</li>
+    <li>計算条件は EN 673（ISO 10292 と同じ考え方）です。JIS R 3107 も中空層の放射と対流を同じように足し合わせる方法ですが、表面熱伝達率などの条件が異なる場合があり、公表値と小さな差が出ます。</li>
+    <li>Low-E 膜付きガラスの光学特性は、垂直入射の代表値（遮熱型 τ 0.42・ρ 0.33・放射率 0.04、断熱型 τ 0.63・ρ 0.20・放射率 0.12）を置き、入射角による変化は透明ガラスの変化の割合を当てはめた簡略なものです。実際の製品は膜の種類と色で違います。</li>
+    <li>透明フロートガラスは屈折率 1.526、日射域の吸収係数 20 m<sup>−1</sup>（6 mm で垂直入射の日射透過率 0.81）としました。鉄分の多いガラスや熱線吸収ガラスは吸収が大きくなります。</li>
+    <li>晴天日射は大気透過率による簡単なモデルで、実際の気象データではありません。日除け、庇、カーテンも考えていません。</li>
+  </ul>
+  <h3>改訂履歴</h3>
+  <ul class="plain">
+    <li>版 1.0（2026-10-15）：初版。5 章「カタログ性能を再現できるか」を加え、AGC ピュアクリアの値を現行の仕様・性能表に合わせた（η 0.60 → 0.58・0.59）。6 章は現行の値で計算し直した（結論の向きは変わらない）。文字コードの宣言（UTF-8）を入れた</li>
+  </ul>
+  <ol class="src">
+    <li>板硝子協会「ビルと複層ガラス」表 2.1（J-Net21 の省エネ Q&amp;A での引用）<a href="https://j-net21.smrj.go.jp/development/energyeff/Q1225.html">j-net21.smrj.go.jp</a></li>
+    <li>日本板硝子「ペアマルチレイボーグリーン S」アルゴン 16 mm：U 1.1、日射熱取得率 0.37（製品資料）<a href="https://glass-wonderland.jp/cms/wp-content/themes/httpdocs/assets/pdf/yr02_Low-E-greenS.pdf">glass-wonderland.jp（Low-E グリーン S）</a>、<a href="https://glass-wonderland.jp/cms/wp-content/themes/httpdocs/assets/pdf/yr02_argon.pdf">同（アルゴン）</a></li>
+    <li>日本板硝子 ニュースリリース（2013）：Low-E 複層 空気層 U 1.7、アルゴン層 U 1.2 <a href="https://www.pilkington.com/-/media/nsg-jp/ir/press-releases/2013/07jun2013increasetheproductionofinsulatedpairglass_j02.pdf">pilkington.com</a></li>
+    <li>AGC Glass Plaza「サンバランス（住宅用）仕様・性能」<a href="https://www.asahiglassplaza.net/products/sunbalance_house/spec/">asahiglassplaza.net</a>、「サンバランス トリプルガラス」<a href="https://www.asahiglassplaza.net/products/sunbalance_triple/">asahiglassplaza.net</a>、「サンバランス（ビル用）特長」<a href="https://www.asahiglassplaza.net/products/sunbalance_building/feature1/">asahiglassplaza.net</a></li>
+    <li>AGC ニュースリリース（2012 年 4 月 12 日）サンバランス アクアグリーン・ピュアクリア <a href="https://www.agc.com/news/pdf/20120412.pdf">agc.com</a></li>
+    <li>JIS R 3107:2019 建築用板ガラスの熱貫流率の算定方法 <a href="https://webdesk.jsa.or.jp/preview/pre_jis_r_03107_000_000_2019_j_ed10_ch.pdf">JSA</a></li>
+    <li>EN 673 Glass in building – Determination of thermal transmittance (U value) – Calculation method／ISO 10292／ISO 15099（気体の物性）／EN 410・ISO 9050（日射熱取得率）</li>
+    <li>透明フロートガラス 6 mm の日射透過率の例：Vitro Clear 0.77 <a href="https://www.vitroglazings.com/media/rnff0xlj/vitro-clear-technical-pds.pdf">vitroglazings.com</a>、Scheuten Float 0.85 <a href="https://scheuten.com/fileadmin/documents/scheuten.com/Technische_specificaties/Basisglas/Scheuten_Float_EN_2018-01.pdf">scheuten.com</a></li>
+  </ol>
+</section>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// ---- 物理モデル（EN 673 / ISO 10292 の熱貫流率、Fresnel の角度特性、ブーゲ・ベルラーゲの晴天日射） ----
+const SIGMA = 5.67e-8, TM = 283.15, DT_TOTAL = 15, P_ATM = 101325, R_GAS = 8314.5;
+const LAMBDA_GLASS = 1.0, EPS_CLEAR = 0.837, HE = 25;
+// ISO 15099 の気体物性の一次式（WINDOW と同じ係数）
+const GASES = {
+  air: { name: '空気', M: 28.97, k: [2.873e-3, 7.760e-5], mu: [3.723e-6, 4.94e-8], cp: [1002.737, 1.2324e-2] },
+  ar:  { name: 'アルゴン', M: 39.948, k: [2.285e-3, 5.149e-5], mu: [3.379e-6, 6.451e-8], cp: [521.9285, 0] },
+  kr:  { name: 'クリプトン', M: 83.80, k: [9.443e-4, 2.826e-5], mu: [2.213e-6, 7.777e-8], cp: [248.0907, 0] }
+};
+const COATS = {
+  none:   { name: 'なし', eps: EPS_CLEAR },
+  shield: { name: 'Low-E 遮熱型', eps: 0.04, tau0: 0.42, rho0: 0.33 },
+  gain:   { name: 'Low-E 断熱型', eps: 0.12, tau0: 0.63, rho0: 0.20 }
+};
+function gasProps(key, T) {
+  const g = GASES[key];
+  const k = g.k[0] + g.k[1] * T, mu = g.mu[0] + g.mu[1] * T, cp = g.cp[0] + g.cp[1] * T;
+  const rho = P_ATM * g.M / (R_GAS * T);
+  return { k, mu, cp, rho };
+}
+// 面の放射率：pane.coat を pane.coatSide（'out'|'in'）の面に付ける
+function surfEps(pane, side) {
+  return (pane.coat !== 'none' && pane.coatSide === side) ? COATS[pane.coat].eps : EPS_CLEAR;
+}
+function gapCoef(gap, e1, e2, dT) {
+  const s = gap.width / 1000, p = gasProps(gap.gas, TM);
+  const hr = 4 * SIGMA * Math.pow(TM, 3) / (1 / e1 + 1 / e2 - 1);
+  const Gr = 9.81 * Math.pow(s, 3) * dT * p.rho * p.rho / (TM * p.mu * p.mu);
+  const Pr = p.mu * p.cp / p.k;
+  const Nu = Math.max(1, 0.035 * Math.pow(Gr * Pr, 0.38));
+  const hg = Nu * p.k / s;
+  return { hr, hg, hs: hr + hg, Gr, Pr, Nu, k: p.k, dT };
+}
+function uValue(cfg) {
+  const panes = cfg.panes, gaps = cfg.gaps, n = gaps.length;
+  let dTs = gaps.map(() => DT_TOTAL / Math.max(1, n));
+  let gc = [];
+  for (let it = 0; it < 30; it++) {
+    gc = gaps.map((g, j) => gapCoef(g, surfEps(panes[j], 'in'), surfEps(panes[j + 1], 'out'), Math.max(dTs[j], 0.1)));
+    const rs = gc.map(c => 1 / c.hs), rsum = rs.reduce((a, b) => a + b, 0);
+    dTs = rs.map(r => DT_TOTAL * r / rsum);
+  }
+  const epsIn = surfEps(panes[panes.length - 1], 'in');
+  const hi = 3.6 + 4.4 * epsIn / EPS_CLEAR;
+  const Re = 1 / HE, Ri = 1 / hi;
+  const Rglass = panes.map(p => p.thick / 1000 / LAMBDA_GLASS);
+  const Rgap = gc.map(c => 1 / c.hs);
+  const Rtot = Re + Ri + Rglass.reduce((a, b) => a + b, 0) + Rgap.reduce((a, b) => a + b, 0);
+  // 各ガラスの中心までの外気側からの抵抗（日射の吸収分のうち室内へ流れる割合に使う）
+  const Rto = [];
+  let acc = Re;
+  panes.forEach((p, i) => { Rto.push(acc + Rglass[i] / 2); acc += Rglass[i] + (i < n ? Rgap[i] : 0); });
+  return { U: 1 / Rtot, Rtot, Re, Ri, hi, Rglass, Rgap, gaps: gc, Rto };
+}
+// ---- 光学 ----
+const N_GLASS = 1.526, K_GLASS = 20; // 1/m（普通透明フロートの日射域の目安）
+function clearPane(theta, thickMm) {
+  const c1 = Math.cos(theta), s1 = Math.sin(theta);
+  if (c1 < 1e-4) return { t: 0, r: 1 };
+  const sT = s1 / N_GLASS, cT = Math.sqrt(1 - sT * sT);
+  const rs = Math.pow((c1 - N_GLASS * cT) / (c1 + N_GLASS * cT), 2);
+  const rp = Math.pow((cT - N_GLASS * c1) / (cT + N_GLASS * c1), 2);
+  const ti = Math.exp(-K_GLASS * thickMm / 1000 / cT);
+  let t = 0, r = 0;
+  for (const q of [rs, rp]) {
+    const den = 1 - q * q * ti * ti;
+    t += (1 - q) * (1 - q) * ti / den / 2;
+    r += (q + q * (1 - q) * (1 - q) * ti * ti / den) / 2;
+  }
+  return { t, r };
+}
+function paneOptics(theta, pane) {
+  const c = clearPane(theta, pane.thick);
+  if (pane.coat === 'none') return { t: c.t, r: c.r, a: Math.max(0, 1 - c.t - c.r) };
+  const c0 = clearPane(0, pane.thick), C = COATS[pane.coat];
+  const t = C.tau0 * c.t / c0.t;
+  const r = Math.min(1 - t, C.rho0 + (1 - C.rho0) * (c.r - c0.r) / (1 - c0.r));
+  return { t, r, a: Math.max(0, 1 - t - r) };
+}
+function systemOptics(theta, panes) {
+  const L = panes.map(p => paneOptics(theta, p)), N = L.length;
+  const a = new Array(N).fill(0), b = new Array(N).fill(0);
+  for (let it = 0; it < 60; it++) {
+    for (let i = 0; i < N; i++) a[i] = i === 0 ? 1 : L[i - 1].t * a[i - 1] + L[i - 1].r * b[i - 1];
+    for (let i = N - 1; i >= 0; i--) b[i] = i === N - 1 ? 0 : L[i + 1].r * a[i + 1] + L[i + 1].t * b[i + 1];
+  }
+  const T = L[N - 1].t * a[N - 1] + L[N - 1].r * b[N - 1];
+  const R = L[0].r * a[0] + L[0].t * b[0];
+  const A = L.map((l, i) => l.a * (a[i] + b[i]));
+  return { T, R, A };
+}
+function solarFactor(theta, cfg, uv) {
+  const o = systemOptics(theta, cfg.panes);
+  const Ni = uv.Rto.map(r => r / uv.Rtot);
+  const sec = o.A.reduce((s, ai, i) => s + ai * Ni[i], 0);
+  return { T: o.T, R: o.R, A: o.A, sec, g: o.T + sec, Ni };
+}
+function hemispherical(cfg, uv) {
+  let T = 0, g = 0, w = 0;
+  for (let d = 0.5; d < 90; d += 1) {
+    const th = d * Math.PI / 180, wt = Math.sin(2 * th);
+    const s = solarFactor(th, cfg, uv);
+    T += s.T * wt; g += s.g * wt; w += wt;
+  }
+  return { T: T / w, g: g / w };
+}
+// ---- 太陽位置と晴天日射 ----
+function dayOfYear(m, d) { return Math.round((Date.UTC(2026, m - 1, d) - Date.UTC(2026, 0, 0)) / 864e5); }
+function sunAt(nDay, clockH, lat, lon) {
+  const B = 2 * Math.PI * (nDay - 1) / 365;
+  const dec = 0.006918 - 0.399912 * Math.cos(B) + 0.070257 * Math.sin(B) - 0.006758 * Math.cos(2 * B)
+    + 0.000907 * Math.sin(2 * B) - 0.002697 * Math.cos(3 * B) + 0.00148 * Math.sin(3 * B);
+  const E = 229.2 * (0.000075 + 0.001868 * Math.cos(B) - 0.032077 * Math.sin(B) - 0.014615 * Math.cos(2 * B) - 0.04089 * Math.sin(2 * B));
+  const st = clockH + (lon - 135) / 15 + E / 60;
+  const t = (st - 12) * 15 * Math.PI / 180, phi = lat * Math.PI / 180;
+  const sinh = Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(t);
+  const h = Math.asin(Math.max(-1, Math.min(1, sinh)));
+  const A = Math.atan2(Math.cos(dec) * Math.sin(t), Math.sin(phi) * Math.cos(dec) * Math.cos(t) - Math.cos(phi) * Math.sin(dec));
+  return { h, A, I0: 1367 * (1 + 0.033 * Math.cos(2 * Math.PI * nDay / 365)) };
+}
+function skyAt(sun, P, wallAz, rhoG) {
+  const sh = Math.sin(sun.h);
+  if (sh <= 0.01) return { IDN: 0, IdH: 0, ITH: 0, cosI: 0, direct: 0, sky: 0, ground: 0 };
+  const m = 1 / sh;
+  const IDN = sun.I0 * Math.pow(P, m);
+  const IdH = 0.5 * sun.I0 * sh * (1 - Math.pow(P, m)) / (1 - 1.4 * Math.log(P));
+  const ITH = IDN * sh + IdH;
+  const cosI = Math.cos(sun.h) * Math.cos(sun.A - wallAz);
+  return { IDN, IdH, ITH, cosI, direct: IDN * Math.max(0, cosI), sky: IdH * 0.5, ground: rhoG * ITH * 0.5 };
+}
+// ---- 画面 ----
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const f1 = v => v.toFixed(1), f2 = v => v.toFixed(2), f3 = v => v.toFixed(3);
+const pane = (t, c = 'none', s = 'in') => ({ thick: t, coat: c, coatSide: s });
+const PRESETS = [
+  { key: 'single', name: '透明単板ガラス', label: 'FL6', cfg: { panes: [pane(6)], gaps: [] },
+    U: 5.8, g: 0.85, src: '板硝子協会（厚さの記載なし）' },
+  { key: 'dbl', name: '透明複層ガラス', label: 'FL3 + A12 + FL3', cfg: { panes: [pane(3), pane(3)], gaps: [{ gas: 'air', width: 12 }] },
+    U: 2.9, g: 0.74, src: '板硝子協会' },
+  { key: 'shield', name: 'Low-E 複層（遮熱型）', label: 'Low-E3（#2）+ A12 + FL3', cfg: { panes: [pane(3, 'shield', 'in'), pane(3)], gaps: [{ gas: 'air', width: 12 }] },
+    U: 1.6, g: 0.42, src: '板硝子協会' },
+  { key: 'gain', name: 'Low-E 複層（断熱型・日射取得型）', label: 'FL3 + A12 + Low-E3（#3）', cfg: { panes: [pane(3), pane(3, 'gain', 'out')], gaps: [{ gas: 'air', width: 12 }] },
+    U: 1.9, g: 0.64, src: '板硝子協会' },
+  { key: 'shieldAr12', name: 'Low-E 複層 アルゴン', label: 'Low-E3（#2）+ Ar12 + FL3', cfg: { panes: [pane(3, 'shield', 'in'), pane(3)], gaps: [{ gas: 'ar', width: 12 }] },
+    U: 1.2, g: null, src: '日本板硝子（2013）' },
+  { key: 'shieldAr16', name: 'Low-E 複層 遮熱型 アルゴン', label: 'Low-E3（#2）+ Ar16 + FL3', cfg: { panes: [pane(3, 'shield', 'in'), pane(3)], gaps: [{ gas: 'ar', width: 16 }] },
+    U: 1.1, g: 0.37, src: '日本板硝子 グリーン S（色付きの膜）' },
+  { key: 'agcNC', name: 'AGC サンバランス ニュートラルクリア 71/38（住宅用・遮熱型）', label: 'SBQ3（#2）+ Ar16 + FL3', cfg: { panes: [pane(3, 'shield', 'in'), pane(3)], gaps: [{ gas: 'ar', width: 16 }] },
+    U: 1.1, g: 0.38, src: 'AGC 仕様・性能（現行）' },
+  { key: 'agcAG', name: 'AGC サンバランス アクアグリーン（遮熱型）', label: 'Low-E3（#2）+ A12 + FL3', cfg: { panes: [pane(3, 'shield', 'in'), pane(3)], gaps: [{ gas: 'air', width: 12 }] },
+    U: 1.6, g: 0.40, src: 'AGC ニュースリリース 2012' },
+  { key: 'agcAGE', name: 'AGC サンバランス アクアグリーン E（遮熱型）', label: 'Low-E3（#2）+ Ar16 + FL3', cfg: { panes: [pane(3, 'shield', 'in'), pane(3)], gaps: [{ gas: 'ar', width: 16 }] },
+    U: 1.1, g: 0.40, src: 'AGC ニュースリリース 2012' },
+  { key: 'agcPC', name: 'AGC サンバランス ピュアクリア（断熱型・日射取得型）', label: 'FL3 + A12 + Low-E3（#3）', cfg: { panes: [pane(3), pane(3, 'gain', 'out')], gaps: [{ gas: 'air', width: 12 }] },
+    U: 1.7, g: 0.58, src: 'AGC 仕様・性能（現行）' },
+  { key: 'agcPCE', name: 'AGC サンバランス ピュアクリア 77/52（断熱型・日射取得型）', label: 'FL3 + Ar16 + Low-E3（#3）', cfg: { panes: [pane(3), pane(3, 'gain', 'out')], gaps: [{ gas: 'ar', width: 16 }] },
+    U: 1.2, g: 0.59, src: 'AGC 仕様・性能（現行）' },
+  { key: 'triple', name: 'Low-E トリプル', label: 'Low-E3（#2）+ Ar12 + FL3 + Ar12 + Low-E3（#5）', cfg: { panes: [pane(3, 'gain', 'in'), pane(3), pane(3, 'gain', 'out')], gaps: [{ gas: 'ar', width: 12 }, { gas: 'ar', width: 12 }] },
+    U: null, g: null, src: '—' },
+  { key: 'tripleKr', name: 'Low-E トリプル クリプトン', label: 'Low-E3（#2）+ Kr10 + FL3 + Kr10 + Low-E3（#5）', cfg: { panes: [pane(3, 'gain', 'in'), pane(3), pane(3, 'gain', 'out')], gaps: [{ gas: 'kr', width: 10 }, { gas: 'kr', width: 10 }] },
+    U: null, g: null, src: '—' }
+];
+const clone = o => JSON.parse(JSON.stringify(o));
+let cfg = clone(PRESETS[2].cfg);
+let presetKey = 'shield';
+
+// ---- 1 データ表 ----
+function renderDataTable() {
+  const tb = $('dataTable').querySelector('tbody');
+  tb.innerHTML = '';
+  PRESETS.forEach(p => {
+    const uv = uValue(p.cfg), s = solarFactor(0, p.cfg, uv);
+    const tr = document.createElement('tr');
+    tr.tabIndex = 0; tr.style.cursor = 'pointer';
+    tr.innerHTML = `<td>${p.name}</td><td>${p.label}</td>
+      <td class="num">${p.U == null ? '—' : p.U.toFixed(1)}</td><td class="num"><strong>${f2(uv.U)}</strong></td>
+      <td class="num">${p.g == null ? '—' : f2(p.g)}</td><td class="num"><strong>${f2(s.g)}</strong></td><td>${p.src}</td>`;
+    const load = () => { presetKey = p.key; cfg = clone(p.cfg); $('preset').value = p.key; refreshAll(); $('uvalue').scrollIntoView({ behavior: 'smooth' }); };
+    tr.addEventListener('click', load);
+    tr.addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
+    tb.appendChild(tr);
+  });
+}
+
+// ---- 2 構成の編集 ----
+function surfaceNo(i, side) { return 2 * i + (side === 'out' ? 1 : 2); }
+function renderLayers() {
+  const box = $('layers'); box.innerHTML = '';
+  $('npanes').value = String(cfg.panes.length);
+  cfg.panes.forEach((p, i) => {
+    const d = document.createElement('div'); d.className = 'layer pane';
+    d.innerHTML = `<div class="tag">ガラス ${i + 1}${i === 0 ? '（屋外側）' : i === cfg.panes.length - 1 ? '（室内側）' : ''}</div>
+      <label class="field" for="th${i}">厚さ [mm]<select id="th${i}">${[3, 4, 5, 6, 8, 10, 12].map(v => `<option${v === p.thick ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+      <label class="field" for="co${i}">膜<select id="co${i}">${Object.keys(COATS).map(k => `<option value="${k}"${k === p.coat ? ' selected' : ''}>${COATS[k].name}</option>`).join('')}</select></label>
+      <label class="field" for="cs${i}">膜の面<select id="cs${i}" ${p.coat === 'none' ? 'disabled' : ''}>
+        <option value="out"${p.coatSide === 'out' ? ' selected' : ''}>屋外側の面（#${surfaceNo(i, 'out')}）</option>
+        <option value="in"${p.coatSide === 'in' ? ' selected' : ''}>室内側の面（#${surfaceNo(i, 'in')}）</option></select></label>`;
+    box.appendChild(d);
+    d.querySelector(`#th${i}`).onchange = e => { p.thick = +e.target.value; changed(); };
+    d.querySelector(`#co${i}`).onchange = e => { p.coat = e.target.value; changed(true); };
+    d.querySelector(`#cs${i}`).onchange = e => { p.coatSide = e.target.value; changed(); };
+    if (i < cfg.gaps.length) {
+      const g = cfg.gaps[i], q = document.createElement('div'); q.className = 'layer gap';
+      q.innerHTML = `<div class="tag">中空層 ${i + 1}</div>
+        <label class="field" for="gs${i}">気体<select id="gs${i}">${Object.keys(GASES).map(k => `<option value="${k}"${k === g.gas ? ' selected' : ''}>${GASES[k].name}</option>`).join('')}</select></label>
+        <label class="field" for="gw${i}">幅 [mm]<input type="number" id="gw${i}" min="4" max="30" step="1" value="${g.width}" style="width:80px"></label>`;
+      box.appendChild(q);
+      q.querySelector(`#gs${i}`).onchange = e => { g.gas = e.target.value; changed(); };
+      q.querySelector(`#gw${i}`).onchange = e => { g.width = Math.min(30, Math.max(4, +e.target.value || 12)); changed(); };
+    }
+  });
+}
+function changed(relayout) { presetKey = 'custom'; $('preset').value = 'custom'; if (relayout) renderLayers(); refreshCalc(); }
+function setPanes(n) {
+  const cur = cfg.panes.length;
+  while (cfg.panes.length < n) { cfg.panes.push(pane(3)); cfg.gaps.push({ gas: 'air', width: 12 }); }
+  while (cfg.panes.length > n) { cfg.panes.pop(); cfg.gaps.pop(); }
+  if (n !== cur) changed(true);
+}
+
+function renderU(uv) {
+  const tot = cfg.panes.reduce((s, p) => s + p.thick, 0) + cfg.gaps.reduce((s, g) => s + g.width, 0);
+  const s0 = solarFactor(0, cfg, uv), hem = hemispherical(cfg, uv);
+  $('bigU').innerHTML = `
+    <div class="k"><span class="v">${f2(uv.U)}</span><span class="u">熱貫流率 U [W/(m²·K)]</span></div>
+    <div class="k"><span class="v">${f3(uv.Rtot)}</span><span class="u">熱抵抗の合計 [m²·K/W]</span></div>
+    <div class="k"><span class="v">${f2(s0.g)}</span><span class="u">日射熱取得率 g（垂直入射）</span></div>
+    <div class="k"><span class="v">${f2(hem.g)}</span><span class="u">g（拡散日射・半球平均）</span></div>
+    <div class="k"><span class="v">${tot}</span><span class="u">総厚 [mm]</span></div>`;
+  // 抵抗の帯
+  const svg = $('resBar'); svg.innerHTML = '';
+  const segs = [{ n: '外表面 1/hₑ', r: uv.Re, c: 'f-cold' }];
+  cfg.panes.forEach((p, i) => {
+    segs.push({ n: `ガラス ${p.thick}mm`, r: uv.Rglass[i], c: 'f-glass' });
+    if (i < cfg.gaps.length) segs.push({ n: `${GASES[cfg.gaps[i].gas].name} ${cfg.gaps[i].width}mm`, r: uv.Rgap[i], c: 'f-sky' });
+  });
+  segs.push({ n: '内表面 1/hᵢ', r: uv.Ri, c: 'f-heat' });
+  const W = 880, x0 = 10; let x = x0;
+  segs.forEach((s, k) => {
+    const w = Math.max(1.5, s.r / uv.Rtot * W);
+    el('rect', { x, y: 46, width: w, height: 30, class: s.c, opacity: s.c === 'f-glass' ? 1 : .8 }, svg);
+    const up = k % 2 === 0;
+    const lx = x + w / 2;
+    el('line', { x1: lx, x2: lx, y1: up ? 40 : 82, y2: up ? 46 : 76, class: 'ax' }, svg);
+    el('text', { x: lx, y: up ? 34 : 98, 'text-anchor': 'middle' }, svg, `${s.n}`);
+    el('text', { x: lx, y: up ? 20 : 112, 'text-anchor': 'middle', class: 'f-ink', style: 'font-family:var(--f-mono)' }, svg, f3(s.r));
+    x += w;
+  });
+  // 中空層の表
+  const tb = $('gapTable').querySelector('tbody'); tb.innerHTML = '';
+  if (!uv.gaps.length) tb.innerHTML = `<tr><td colspan="9" class="note">単板ガラスには中空層がありません。U は表面熱抵抗とガラスの抵抗だけで決まります。</td></tr>`;
+  uv.gaps.forEach((g, j) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${j + 1}：${GASES[cfg.gaps[j].gas].name} ${cfg.gaps[j].width} mm（ε ${f3(surfEps(cfg.panes[j], 'in'))} / ${f3(surfEps(cfg.panes[j + 1], 'out'))}）</td>
+      <td class="num">${f1(g.dT)}</td><td class="num">${Math.round(g.Gr)}</td><td class="num">${f3(g.Pr)}</td><td class="num">${f2(g.Nu)}</td>
+      <td class="num">${f2(g.hg)}</td><td class="num">${f2(g.hr)}</td><td class="num">${f2(g.hs)}</td><td class="num">${f3(1 / g.hs)}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ---- 汎用の折れ線グラフ ----
+function frame(svg, W, H, m, xr, yr, xt, yt, xl, yl) {
+  svg.innerHTML = '';
+  const X = v => m.l + (v - xr[0]) / (xr[1] - xr[0]) * (W - m.l - m.r);
+  const Y = v => H - m.b - (v - yr[0]) / (yr[1] - yr[0]) * (H - m.t - m.b);
+  yt.forEach(v => { el('line', { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: 'gr' }, svg); el('text', { x: m.l - 6, y: Y(v) + 4, 'text-anchor': 'end' }, svg, v); });
+  xt.forEach(v => { el('line', { x1: X(v), x2: X(v), y1: H - m.b, y2: H - m.b + 4, class: 'ax' }, svg); el('text', { x: X(v), y: H - m.b + 17, 'text-anchor': 'middle' }, svg, v); });
+  el('line', { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: 'ax' }, svg);
+  el('line', { x1: m.l, x2: m.l, y1: m.t, y2: H - m.b, class: 'ax' }, svg);
+  el('text', { x: (m.l + W - m.r) / 2, y: H - 4, 'text-anchor': 'middle' }, svg, xl);
+  el('text', { x: 12, y: (m.t + H - m.b) / 2, transform: `rotate(-90 12 ${(m.t + H - m.b) / 2})`, 'text-anchor': 'middle' }, svg, yl);
+  return { X, Y };
+}
+const path = (pts, X, Y) => pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' ');
+function niceTicks(lo, hi, n) {
+  const step0 = (hi - lo) / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 2.5, 5, 10].map(k => k * mag).find(s => s >= step0);
+  const a = Math.floor(lo / step) * step, out = [];
+  for (let v = a; v < hi + step - 1e-9; v += step) out.push(+v.toFixed(6));
+  return out;
+}
+
+function renderGapChart() {
+  if (!cfg.gaps.length) {
+    $('gapChart').innerHTML = ''; el('text', { x: 320, y: 150, 'text-anchor': 'middle' }, $('gapChart'), '単板ガラスには中空層がありません。2 枚以上にすると表示します。');
+    $('gapLegend').innerHTML = ''; return;
+  }
+  const ws = []; for (let w = 4; w <= 24.01; w += 0.5) ws.push(w);
+  const series = Object.keys(GASES).map(k => ({ k, pts: ws.map(w => { const c = clone(cfg); c.gaps.forEach(g => { g.gas = k; g.width = w; }); return [w, uValue(c).U]; }) }));
+  const all = series.flatMap(s => s.pts.map(p => p[1]));
+  const yt = niceTicks(Math.min(...all), Math.max(...all), 5);
+  const { X, Y } = frame($('gapChart'), 640, 300, { l: 52, r: 16, t: 14, b: 40 }, [4, 24], [yt[0], yt[yt.length - 1]], [4, 8, 12, 16, 20, 24], yt, '中空層の幅 [mm]', 'U [W/(m²·K)]');
+  const cls = { air: 'c-ink', ar: 'c-sky', kr: 'c-coat' };
+  series.forEach(s => {
+    el('path', { d: path(s.pts, X, Y), class: cls[s.k] }, $('gapChart'));
+    const best = s.pts.reduce((a, b) => b[1] < a[1] ? b : a);
+    el('circle', { cx: X(best[0]), cy: Y(best[1]), r: 3, class: 'f-ink' }, $('gapChart'));
+    el('text', { x: X(best[0]), y: Y(best[1]) + 16, 'text-anchor': 'middle' }, $('gapChart'), `${best[0]} mm`);
+  });
+  const uv = uValue(cfg), w0 = cfg.gaps[0].width;
+  el('circle', { cx: X(w0), cy: Y(uv.U), r: 6, class: 'f-heat' }, $('gapChart'));
+  el('text', { x: X(w0) + 9, y: Y(uv.U) - 8, class: 'f-heat' }, $('gapChart'), `いまの構成 ${f2(uv.U)}`);
+  $('gapLegend').innerHTML = `<span style="--c: var(--ink)">空気</span><span style="--c: var(--sky)">アルゴン</span><span style="--c: var(--coat)">クリプトン</span><span style="--c: var(--ink); opacity:.7">● 各気体で U が最も低い幅</span>`;
+}
+
+// ---- 4 角度特性 ----
+function renderAngle() {
+  const uv = uValue(cfg), hem = hemispherical(cfg, uv);
+  const pts = []; for (let d = 0; d <= 89; d += 1) { const s = solarFactor(d * Math.PI / 180, cfg, uv); pts.push([d, s.T, s.g]); }
+  const svg = $('angleChart');
+  const { X, Y } = frame(svg, 460, 300, { l: 46, r: 12, t: 14, b: 40 }, [0, 90], [0, 1], [0, 15, 30, 45, 60, 75, 90], [0, 0.2, 0.4, 0.6, 0.8, 1], '入射角 θ [°]', '割合');
+  el('path', { d: path(pts.map(p => [p[0], p[1]]), X, Y), class: 'c-glass' }, svg);
+  el('path', { d: path(pts.map(p => [p[0], p[2]]), X, Y), class: 'c-sun' }, svg);
+  el('line', { x1: X(0), x2: X(90), y1: Y(hem.g), y2: Y(hem.g), class: 'c-sky dash' }, svg);
+  el('text', { x: X(2), y: Y(hem.g) - 6, class: 'f-sky' }, svg, `拡散 ${f2(hem.g)}`);
+  const th = +$('thSlider').value, s = solarFactor(th * Math.PI / 180, cfg, uv);
+  el('line', { x1: X(th), x2: X(th), y1: Y(0), y2: Y(1), class: 'ax' }, svg);
+  el('circle', { cx: X(th), cy: Y(s.g), r: 4.5, class: 'f-sun' }, svg);
+  renderSplit(th, s);
+}
+function renderSplit(th, s) {
+  $('thLabel').textContent = th + '°';
+  const svg = $('splitBar'); svg.innerHTML = '';
+  const absT = s.A.reduce((a, b) => a + b, 0);
+  const parts = [
+    { n: '透過', v: s.T, c: 'f-sun' },
+    { n: '吸収→室内', v: s.sec, c: 'f-heat' },
+    { n: '吸収→屋外', v: Math.max(0, absT - s.sec), c: 'f-cold' },
+    { n: '反射', v: s.R, c: 'f-line' }
+  ];
+  let x = 10; const W = 440;
+  parts.forEach((p, k) => {
+    const w = p.v * W;
+    el('rect', { x, y: 30, width: Math.max(0, w), height: 34, class: p.c, opacity: p.c === 'f-cold' ? .55 : 1 }, svg);
+    x += w;
+  });
+  parts.forEach((p, k) => {
+    const yy = 92 + Math.floor(k / 2) * 22, xx = 10 + (k % 2) * 220;
+    el('rect', { x: xx, y: yy - 10, width: 12, height: 12, class: p.c }, svg);
+    el('text', { x: xx + 18, y: yy, class: 'f-ink' }, svg, `${p.n}  ${(p.v * 100).toFixed(1)} %`);
+  });
+  el('text', { x: 10, y: 20 }, svg, `日射熱取得率 g = 透過 + 吸収→室内 = ${f3(s.g)}`);
+}
+
+// ---- 4 1 日の日射 ----
+function siteParams() {
+  const [lat, lon] = $('site').value.split(',').map(Number);
+  const [m, d] = $('day').value.split(',').map(Number);
+  return { lat, lon, n: dayOfYear(m, d), az: +$('orient').value * Math.PI / 180, P: +$('Patm').value };
+}
+function solarAt(hour, sp, uv, hem) {
+  const sun = sunAt(sp.n, hour, sp.lat, sp.lon), sky = skyAt(sun, sp.P, sp.az, 0.2);
+  const th = Math.acos(Math.min(1, Math.max(0, sky.cosI)));
+  const gd = sky.direct > 0 ? solarFactor(th, cfg, uv).g : 0;
+  const diff = sky.sky + sky.ground;
+  return { sun, sky, th, diff, qDir: sky.direct * gd, qDif: diff * hem.g, gd };
+}
+function renderDay() {
+  const uv = uValue(cfg), hem = hemispherical(cfg, uv), sp = siteParams();
+  const rows = []; let sDir = 0, sDif = 0, qDir = 0, qDif = 0;
+  const dt = 0.1;
+  for (let h = 3; h <= 21 + 1e-9; h += dt) {
+    const r = solarAt(h, sp, uv, hem); rows.push([h, r]);
+    sDir += r.sky.direct * dt; sDif += r.diff * dt; qDir += r.qDir * dt; qDif += r.qDif * dt;
+  }
+  const ymax = Math.max(200, ...rows.map(r => Math.max(r[1].sky.direct, r[1].diff, r[1].qDir + r[1].qDif)));
+  const yt = niceTicks(0, ymax, 5);
+  const svg = $('dayChart');
+  const { X, Y } = frame(svg, 900, 330, { l: 58, r: 16, t: 16, b: 40 }, [4, 20], [0, yt[yt.length - 1]], [4, 6, 8, 10, 12, 14, 16, 18, 20], yt, '時刻（日本標準時）', 'W/m²');
+  const area = rows.map(r => [r[0], r[1].qDir + r[1].qDif]);
+  el('path', { d: path(area, X, Y) + ` L ${X(21)} ${Y(0)} L ${X(3)} ${Y(0)} Z`, class: 'f-heat', opacity: .18 }, svg);
+  el('path', { d: path(area, X, Y), class: 'c-heat' }, svg);
+  el('path', { d: path(rows.map(r => [r[0], r[1].sky.direct]), X, Y), class: 'c-sun' }, svg);
+  el('path', { d: path(rows.map(r => [r[0], r[1].diff]), X, Y), class: 'c-sky' }, svg);
+  const hr = +$('hour').value, cur = solarAt(hr, sp, uv, hem);
+  el('line', { x1: X(hr), x2: X(hr), y1: Y(0), y2: Y(yt[yt.length - 1]), class: 'c-ink dash' }, svg);
+  el('circle', { cx: X(hr), cy: Y(cur.qDir + cur.qDif), r: 4.5, class: 'f-heat' }, svg);
+  const hh = Math.floor(hr), mm = Math.round((hr - hh) * 60);
+  $('hourLabel').textContent = `${hh}:${String(mm).padStart(2, '0')}`;
+  const deg = v => (v * 180 / Math.PI).toFixed(0);
+  const up = cur.sun.h > 0;
+  $('bigSolar').innerHTML = `
+    <div class="k"><span class="v">${up ? deg(cur.sun.h) + '°' : '—'}</span><span class="u">太陽高度</span></div>
+    <div class="k"><span class="v">${up ? deg(cur.sun.A) + '°' : '—'}</span><span class="u">太陽方位角（南 0°、西が＋）</span></div>
+    <div class="k"><span class="v">${cur.sky.direct > 0 ? deg(cur.th) + '°' : '日が当たらない'}</span><span class="u">窓への入射角 θ</span></div>
+    <div class="k"><span class="v">${Math.round(cur.sky.direct)} / ${Math.round(cur.diff)}</span><span class="u">窓面の直達 / 拡散 [W/m²]</span></div>
+    <div class="k"><span class="v">${Math.round(cur.qDir + cur.qDif)}</span><span class="u">室内に入る熱 [W/m²]</span></div>`;
+  const kwh = v => (v / 1000).toFixed(2);
+  $('dayTable').querySelector('tbody').innerHTML = `
+    <tr><td>窓面に当たる日射 [kWh/(m²·日)]</td><td class="num">${kwh(sDir)}</td><td class="num">${kwh(sDif)}</td><td class="num">${kwh(sDir + sDif)}</td></tr>
+    <tr><td>室内に入る熱 [kWh/(m²·日)]</td><td class="num">${kwh(qDir)}</td><td class="num">${kwh(qDif)}</td><td class="num">${kwh(qDir + qDif)}</td></tr>
+    <tr><td>平均の日射熱取得率</td><td class="num">${sDir > 0 ? f2(qDir / sDir) : '—'}</td><td class="num">${f2(qDif / sDif)}</td><td class="num">${f2((qDir + qDif) / (sDir + sDif))}</td></tr>`;
+  const dirShare = (sDir / (sDir + sDif) * 100).toFixed(0);
+  $('solarStory').innerHTML = `この条件では、窓面に当たる日射の <strong>${dirShare} %</strong> が直達日射です。直達日射の平均の日射熱取得率（${sDir > 0 ? f2(qDir / sDir) : '—'}）は、垂直入射の値（${f2(solarFactor(0, cfg, uv).g)}）より低くなります。窓に斜めから当たる時間が長いためです。拡散日射は全方向の平均（${f2(hem.g)}）で入ります。夏至の南向きの窓は、太陽が高く入射角が大きいので直達の取得が小さく、冬至には太陽が低く正面近くから当たるので大きくなります。`;
+  view3d.update(cur, sp);
+}
+
+// ---- ヒーロー図 ----
+function renderHero() {
+  const s = $('heroFig'); s.innerHTML = '';
+  el('rect', { x: 0, y: 0, width: 140, height: 220, class: 'f-cold', opacity: .10 }, s);
+  el('rect', { x: 196, y: 0, width: 124, height: 220, class: 'f-heat', opacity: .10 }, s);
+  el('rect', { x: 140, y: 20, width: 12, height: 180, class: 'f-glass', opacity: .85 }, s);
+  el('rect', { x: 152, y: 20, width: 32, height: 180, class: 'f-sky', opacity: .15 }, s);
+  el('rect', { x: 184, y: 20, width: 12, height: 180, class: 'f-glass', opacity: .85 }, s);
+  el('rect', { x: 151, y: 20, width: 2, height: 180, class: 'f-coat' }, s);
+  el('line', { x1: 20, y1: 20, x2: 146, y2: 110, class: 'c-sun' }, s);
+  el('line', { x1: 146, y1: 110, x2: 300, y2: 200, class: 'c-sun', 'stroke-width': 1.4, opacity: .8 }, s);
+  el('line', { x1: 146, y1: 110, x2: 40, y2: 180, class: 'c-sun dash', 'stroke-width': 1 }, s);
+  for (let k = 0; k < 4; k++) el('line', { x1: 30 + k * 22, y1: 150 + (k % 2) * 20, x2: 136, y2: 140 + k * 10, class: 'c-sky', 'stroke-width': 1.2, opacity: .8 }, s);
+  el('path', { d: 'M300 60 L210 60', class: 'c-heat' }, s); el('path', { d: 'M222 54 L210 60 L222 66', class: 'c-heat' }, s);
+  el('path', { d: 'M130 60 L40 60', class: 'c-heat', opacity: .6 }, s); el('path', { d: 'M52 54 L40 60 L52 66', class: 'c-heat', opacity: .6 }, s);
+  el('text', { x: 10, y: 214 }, s, '屋外');
+  el('text', { x: 280, y: 214 }, s, '室内');
+  el('text', { x: 250, y: 50, 'text-anchor': 'middle', class: 'f-heat' }, s, '熱（U）');
+  el('text', { x: 40, y: 14, class: 'f-sun' }, s, '直達');
+  el('text', { x: 20, y: 200, class: 'f-sky' }, s, '拡散');
+}
+
+// ---- 3D ----
+const view3d = (() => {
+  const host = $('view3d'), tags = $('tags3d');
+  let ok = false, renderer, scene, camera, controls, group, sunGroup, heatGroup, labels = [], last = null;
+  function tok(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#888'; }
+  function init() {
+    try {
+      if (!window.THREE) throw new Error('three');
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+      host.insertBefore(renderer.domElement, tags);
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(38, 16 / 9, 1, 5000);
+      camera.position.set(260, 150, 320);
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = false; controls.target.set(0, 0, 0);
+      controls.addEventListener('change', render);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+      const dl = new THREE.DirectionalLight(0xffffff, 0.6); dl.position.set(200, 300, 200); scene.add(dl);
+      ok = true;
+      new ResizeObserver(resize).observe(host); resize();
+      $('show3dHeat').onchange = () => { heatGroup && (heatGroup.visible = $('show3dHeat').checked); render(); };
+      $('show3dSun').onchange = () => { sunGroup && (sunGroup.visible = $('show3dSun').checked); render(); };
+    } catch (e) {
+      const d = document.createElement('div'); d.className = 'fallback';
+      d.textContent = 'この端末では 3D を表示できませんでした（WebGL が使えないか、three.js を読み込めませんでした）。2 章と 4 章の図は使えます。';
+      host.appendChild(d);
+    }
+  }
+  function resize() {
+    if (!ok) return;
+    const w = host.clientWidth, h = host.clientHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); render();
+  }
+  function mat(color, opacity) { return new THREE.MeshStandardMaterial({ color, transparent: opacity < 1, opacity, roughness: .35, metalness: 0, depthWrite: opacity >= .5 }); }
+  function box(w, h, d, color, op, x) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, op)); m.position.x = x; return m;
+  }
+  function arrow(from, to, radius, color, opacity) {
+    const g = new THREE.Group(), dir = new THREE.Vector3().subVectors(to, from), len = dir.length();
+    if (len < 1 || radius < 0.05) return g;
+    const head = Math.min(len * 0.35, radius * 4 + 4);
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, len - head, 16), mat(color, opacity));
+    shaft.position.y = (len - head) / 2;
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(radius * 2.2 + 1, head, 16), mat(color, opacity));
+    cone.position.y = len - head / 2;
+    g.add(shaft, cone); g.position.copy(from);
+    g.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+    return g;
+  }
+  const H = 150, D = 130;
+  function layout() {
+    const xs = []; let x = 0;
+    cfg.panes.forEach((p, i) => { xs.push({ type: 'pane', x0: x, x1: x + p.thick, i }); x += p.thick; if (i < cfg.gaps.length) { xs.push({ type: 'gap', x0: x, x1: x + cfg.gaps[i].width, i }); x += cfg.gaps[i].width; } });
+    const off = x / 2; xs.forEach(s => { s.x0 -= off; s.x1 -= off; });
+    return { xs, total: x, xo: -off, xi: x - off };
+  }
+  function build(cur) {
+    if (!ok) return;
+    if (group) scene.remove(group);
+    group = new THREE.Group(); scene.add(group);
+    const L = layout();
+    const cG = tok('--glass'), cC = tok('--coat'), cS = tok('--sky'), cH = tok('--heat'), cSun = tok('--sun'), cInk = tok('--muted');
+    const gasCol = { air: tok('--line'), ar: cS, kr: cC };
+    L.xs.forEach(s => {
+      if (s.type === 'pane') {
+        const p = cfg.panes[s.i];
+        const m = box(s.x1 - s.x0, H, D, cG, .55, (s.x0 + s.x1) / 2); group.add(m);
+        const e = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry), new THREE.LineBasicMaterial({ color: cG }));
+        e.position.copy(m.position); group.add(e);
+        if (p.coat !== 'none') {
+          const xc = p.coatSide === 'out' ? s.x0 - 0.3 : s.x1 + 0.3;
+          group.add(box(0.6, H, D, cC, .9, xc));
+        }
+      } else {
+        const g = cfg.gaps[s.i];
+        group.add(box(s.x1 - s.x0, H - 4, D - 4, gasCol[g.gas], g.gas === 'air' ? .12 : .2, (s.x0 + s.x1) / 2));
+        // スペーサー
+        group.add(box(s.x1 - s.x0, 4, D, cInk, .9, (s.x0 + s.x1) / 2).translateY(-H / 2 + 2));
+        group.add(box(s.x1 - s.x0, 4, D, cInk, .9, (s.x0 + s.x1) / 2).translateY(H / 2 - 2));
+      }
+    });
+    // 温度の分布（外 0 ℃、内 20 ℃）
+    heatGroup = new THREE.Group(); group.add(heatGroup);
+    const uv = uValue(cfg), q = uv.U * 20, Tz = T => -H / 2 + T / 20 * H, zf = D / 2 + 1;
+    let T = 0; const pts = [[L.xo - 60, 0]];
+    T += q * uv.Re; pts.push([L.xo, T]);
+    labels = [];
+    L.xs.forEach(s => {
+      if (s.type === 'pane') T += q * uv.Rglass[s.i]; else T += q * uv.Rgap[s.i];
+      pts.push([s.x1, T]);
+    });
+    pts.push([L.xi + 60, 20]);
+    const v3 = pts.map(p => new THREE.Vector3(p[0], Tz(p[1]), zf));
+    heatGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(v3), new THREE.LineBasicMaterial({ color: cH })));
+    pts.slice(1, -1).forEach(p => {
+      const sp = new THREE.Mesh(new THREE.SphereGeometry(1.8, 12, 8), mat(cH, 1)); sp.position.set(p[0], Tz(p[1]), zf); heatGroup.add(sp);
+    });
+    labels.push({ p: new THREE.Vector3(L.xo, Tz(pts[1][1]) + 12, zf), t: `外表面 ${f1(pts[1][1])} ℃`, g: heatGroup });
+    labels.push({ p: new THREE.Vector3(L.xi, Tz(pts[pts.length - 2][1]) - 12, zf), t: `内表面 ${f1(pts[pts.length - 2][1])} ℃`, g: heatGroup });
+    labels.push({ p: new THREE.Vector3(L.xo - 60, -H / 2 - 14, 0), t: '屋外 0 ℃', g: group });
+    labels.push({ p: new THREE.Vector3(L.xi + 60, H / 2 + 14, 0), t: '室内 20 ℃', g: group });
+    heatGroup.visible = $('show3dHeat').checked;
+    // 日射
+    sunGroup = new THREE.Group(); group.add(sunGroup);
+    if (cur && cur.sun.h > 0) {
+      const sp = last.sp, h = cur.sun.h, A = cur.sun.A, aw = sp.az;
+      const s = [Math.cos(h) * Math.cos(A), Math.cos(h) * Math.sin(A), Math.sin(h)];
+      const n = [Math.cos(aw), Math.sin(aw), 0], r = [-Math.sin(aw), Math.cos(aw), 0];
+      const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+      const sv = new THREE.Vector3(-dot(s, n), s[2], -dot(s, r)).normalize();
+      const O = new THREE.Vector3(L.xo, 20, 0);
+      if (cur.sky.direct > 0) {
+        const sf = solarFactor(cur.th, cfg, uv), r0 = 3.2;
+        sunGroup.add(arrow(O.clone().addScaledVector(sv, 220), O, r0, cSun, .95));
+        const dIn = sv.clone().negate();
+        const exit = O.clone().addScaledVector(dIn, L.total / Math.max(0.05, dIn.x));
+        const seg = new THREE.Line(new THREE.BufferGeometry().setFromPoints([O, exit]), new THREE.LineBasicMaterial({ color: cSun }));
+        sunGroup.add(seg);
+        sunGroup.add(arrow(exit, exit.clone().addScaledVector(dIn, 150), r0 * Math.sqrt(sf.T), cSun, .9));
+        const refl = new THREE.Vector3(-dIn.x, dIn.y, dIn.z);
+        sunGroup.add(arrow(O, O.clone().addScaledVector(refl, 120), r0 * Math.sqrt(sf.R), cSun, .45));
+        labels.push({ p: O.clone().addScaledVector(sv, 230), t: `直達 θ ${(cur.th * 180 / Math.PI).toFixed(0)}°`, g: sunGroup });
+        labels.push({ p: exit.clone().addScaledVector(dIn, 160), t: `透過 ${(sf.T * 100).toFixed(0)} %`, g: sunGroup });
+      }
+      for (let k = 0; k < 9; k++) {
+        const el2 = (10 + (k % 3) * 25) * Math.PI / 180, az = (-60 + Math.floor(k / 3) * 60) * Math.PI / 180;
+        const dv = new THREE.Vector3(-Math.cos(el2) * Math.cos(az), Math.sin(el2) - 0.15, Math.cos(el2) * Math.sin(az)).normalize();
+        const tgt = new THREE.Vector3(L.xo - 1, -40 + (k % 3) * 30, -40 + Math.floor(k / 3) * 40);
+        sunGroup.add(arrow(tgt.clone().addScaledVector(dv, 90), tgt, 1.1, cS, .8));
+      }
+      labels.push({ p: new THREE.Vector3(L.xo - 95, -60, 70), t: '拡散', g: sunGroup });
+    }
+    sunGroup.visible = $('show3dSun').checked;
+    render();
+  }
+  function render() {
+    if (!ok) return;
+    renderer.render(scene, camera);
+    tags.innerHTML = '';
+    const w = host.clientWidth, h = host.clientHeight;
+    labels.forEach(l => {
+      let vis = true, o = l.g; while (o) { if (o.visible === false) vis = false; o = o.parent; }
+      if (!vis) return;
+      const v = l.p.clone().project(camera);
+      if (v.z > 1) return;
+      const d = document.createElement('div'); d.textContent = l.t;
+      d.style.left = ((v.x + 1) / 2 * w) + 'px'; d.style.top = ((1 - v.y) / 2 * h) + 'px';
+      tags.appendChild(d);
+    });
+  }
+  return {
+    init,
+    update(cur, sp) { last = { cur, sp }; build(cur); },
+    rebuild() { if (last) build(last.cur); }
+  };
+})();
+
+
+// ---- 6 緯度と型の選び分け（事前に計算した結果） ----
+const LATRES = [{"n":"那覇","lat":26.21,"v":{"南":{"base":13.3,"min":13.3,"max":17.8,"dH":0,"dC":53},"東":{"base":19.2,"min":19.2,"max":25.6,"dH":0,"dC":77},"北":{"base":8.1,"min":8.1,"max":10.9,"dH":0,"dC":33}}},{"n":"奄美","lat":28.38,"v":{"南":{"base":10,"min":10,"max":13.5,"dH":0,"dC":40},"東":{"base":15.1,"min":15.1,"max":20.2,"dH":0,"dC":60},"北":{"base":6.3,"min":6.3,"max":8.5,"dH":0,"dC":25}}},{"n":"鹿児島","lat":31.56,"v":{"南":{"base":-7.6,"min":-14.6,"max":-1.9,"dH":-42,"dC":26},"東":{"base":4.6,"min":1.7,"max":9.4,"dH":-17,"dC":41},"北":{"base":2.2,"min":1.1,"max":4.1,"dH":-6,"dC":17}}},{"n":"宮崎","lat":31.94,"v":{"南":{"base":-10.6,"min":-18.9,"max":-4.5,"dH":-50,"dC":24},"東":{"base":2.7,"min":-0.7,"max":7.6,"dH":-21,"dC":38},"北":{"base":1.4,"min":0.2,"max":3.4,"dH":-7,"dC":16}}},{"n":"福岡","lat":33.58,"v":{"南":{"base":-7.1,"min":-13.8,"max":-1.8,"dH":-40,"dC":25},"東":{"base":4.2,"min":1.5,"max":8.6,"dH":-16,"dC":38},"北":{"base":2.1,"min":1.3,"max":3.9,"dH":-5,"dC":16}}},{"n":"大阪","lat":34.69,"v":{"南":{"base":-10.8,"min":-19.5,"max":-4.2,"dH":-52,"dC":27},"東":{"base":2.7,"min":-0.8,"max":7.8,"dH":-21,"dC":39},"北":{"base":1.6,"min":0.4,"max":3.5,"dH":-7,"dC":16}}},{"n":"東京","lat":35.69,"v":{"南":{"base":-16.5,"min":-27,"max":-9.6,"dH":-63,"dC":19},"東":{"base":-1.8,"min":-6.1,"max":2.7,"dH":-26,"dC":28},"北":{"base":-0.3,"min":-1.8,"max":1.4,"dH":-9,"dC":11}}},{"n":"新潟","lat":37.89,"v":{"南":{"base":-5.3,"min":-10.6,"max":-0.9,"dH":-32,"dC":21},"東":{"base":3.3,"min":1.2,"max":6.7,"dH":-12,"dC":29},"北":{"base":2.2,"min":1.8,"max":3.4,"dH":-2,"dC":12}}},{"n":"仙台","lat":38.26,"v":{"南":{"base":-21.9,"min":-34,"max":-15.2,"dH":-72,"dC":9},"東":{"base":-7.4,"min":-12.6,"max":-3.7,"dH":-31,"dC":12},"北":{"base":-2.2,"min":-3.9,"max":-0.9,"dH":-10,"dC":5}}},{"n":"盛岡","lat":39.7,"v":{"南":{"base":-20.3,"min":-31.3,"max":-14.4,"dH":-66,"dC":6},"東":{"base":-7.5,"min":-12.3,"max":-4.5,"dH":-29,"dC":8},"北":{"base":-1.8,"min":-3.1,"max":-0.7,"dH":-8,"dC":3}}},{"n":"札幌","lat":43.06,"v":{"南":{"base":-15.9,"min":-24.2,"max":-11,"dH":-50,"dC":3},"東":{"base":-5.8,"min":-9.2,"max":-2.9,"dH":-20,"dC":4},"北":{"base":-0.9,"min":-1.5,"max":0.2,"dH":-4,"dC":1}}},{"n":"旭川","lat":43.77,"v":{"南":{"base":-15,"min":-22.5,"max":-9.7,"dH":-45,"dC":0},"東":{"base":-5.8,"min":-8.7,"max":-3.1,"dH":-17,"dC":0},"北":{"base":-0.4,"min":-0.7,"max":0.7,"dH":-1,"dC":0}}}];
+function renderLat() {
+  const o = $('latOrient').value, svg = $('latChart');
+  const vals = LATRES.flatMap(r => [r.v[o].min, r.v[o].max]);
+  const yt = niceTicks(Math.min(-5, ...vals), Math.max(5, ...vals), 6);
+  const { X, Y } = frame(svg, 900, 360, { l: 60, r: 20, t: 18, b: 42 }, [25, 45], [yt[0], yt[yt.length - 1]], [25, 27.5, 30, 32.5, 35, 37.5, 40, 42.5, 45], yt, '北緯 [°]', '電力の増減 [kWh/(m²·年)]');
+  el('rect', { x: X(25), y: Y(yt[yt.length - 1]), width: X(45) - X(25), height: Y(0) - Y(yt[yt.length - 1]), class: 'f-cold', opacity: .06 }, svg);
+  el('line', { x1: X(25), x2: X(45), y1: Y(0), y2: Y(0), class: 'c-ink' }, svg);
+  el('text', { x: X(44.8), y: Y(0) - 8, 'text-anchor': 'end', class: 'f-ink' }, svg, '↑ 遮熱型が有利');
+  el('text', { x: X(44.8), y: Y(0) + 18, 'text-anchor': 'end', class: 'f-ink' }, svg, '↓ 取得型が有利');
+  LATRES.forEach((r, i) => {
+    const v = r.v[o];
+    el('line', { x1: X(r.lat), x2: X(r.lat), y1: Y(v.min), y2: Y(v.max), class: 'c-ink', 'stroke-width': 6, opacity: .18 }, svg);
+    el('circle', { cx: X(r.lat), cy: Y(v.base), r: 5, class: 'f-heat' }, svg);
+    const up = r.n === '新潟' ? true : r.n === '仙台' ? false : i % 2 === 0;
+    el('text', { x: X(r.lat), y: (up ? Y(v.max) - 8 : Y(v.min) + 16), 'text-anchor': 'middle', class: 'f-ink' }, svg, r.n);
+  });
+  el('path', { d: path(LATRES.map(r => [r.lat, r.v[o].base]), X, Y), class: 'c-heat', opacity: .6 }, svg);
+  const tb = $('latTable').querySelector('tbody');
+  tb.innerHTML = LATRES.map(r => { const v = r.v[o];
+    const side = v.max < 0 ? '取得型' : v.min > 0 ? '遮熱型' : '条件しだい';
+    return `<tr><td>${r.n}</td><td class="num">${r.lat.toFixed(1)}</td><td class="num">${v.dH > 0 ? '+' : ''}${v.dH}</td><td class="num">${v.dC > 0 ? '+' : ''}${v.dC}</td><td class="num">${v.base > 0 ? '+' : ''}${v.base.toFixed(1)}</td><td class="num">${v.min.toFixed(1)} 〜 ${v.max.toFixed(1)}</td><td>${side}</td></tr>`; }).join('');
+}
+
+// ---- 全体の更新 ----
+function refreshCalc() {
+  const uv = uValue(cfg);
+  renderU(uv); renderGapChart(); renderAngle(); renderDay();
+}
+function refreshAll() { renderLayers(); refreshCalc(); }
+function boot() {
+  const sel = $('preset');
+  sel.innerHTML = PRESETS.map(p => `<option value="${p.key}">${p.name}</option>`).join('') + '<option value="custom">（自分で編集）</option>';
+  sel.value = presetKey;
+  sel.onchange = () => { const p = PRESETS.find(q => q.key === sel.value); if (p) { presetKey = p.key; cfg = clone(p.cfg); refreshAll(); } };
+  $('npanes').onchange = e => setPanes(+e.target.value);
+  $('thSlider').oninput = renderAngle;
+  ['site', 'day', 'orient', 'Patm'].forEach(id => $(id).onchange = renderDay);
+  $('hour').oninput = renderDay;
+  renderHero(); renderDataTable();
+  $('latOrient').onchange = renderLat; renderLat();
+  view3d.init();
+  refreshAll();
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  const re = () => view3d.rebuild();
+  mq.addEventListener ? mq.addEventListener('change', re) : mq.addListener(re);
+  new MutationObserver(re).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+}
+boot();
+</script>
+</body>
+</html>
