@@ -30,7 +30,9 @@ foamDictionary -entry startTime  -set "$start"   system/controlDict >/dev/null
 foamDictionary -entry endTime    -set "$end"     system/controlDict >/dev/null
 foamDictionary -entry writeControl   -set timeStep        system/controlDict >/dev/null
 foamDictionary -entry writeInterval  -set "$iters"        system/controlDict >/dev/null
-foamDictionary -entry writeFormat    -set ascii           system/controlDict >/dev/null
+# 領域を分ける間は binary で書く（格子を 1 ビットも変えないため。ascii の 16 桁では倍精度を書き戻せず、
+# また macOS は 1e-315 のような非正規化数を ascii から読めず decomposePar が止まる）。計算の前に ascii に戻す
+foamDictionary -entry writeFormat    -set binary          system/controlDict >/dev/null
 foamDictionary -entry writePrecision -set 16              system/controlDict >/dev/null
 foamDictionary -entry writeCompression -set off           system/controlDict >/dev/null
 foamDictionary -entry purgeWrite     -set 0               system/controlDict >/dev/null
@@ -66,7 +68,7 @@ fi
   echo "WM_PROJECT_VERSION: ${WM_PROJECT_VERSION:-?}"; echo "WM_OPTIONS: ${WM_OPTIONS:-?}"
   echo "WM_COMPILER: ${WM_COMPILER:-?}"; echo "solver: $solver"
   echo "iterations: $iters"; echo "np: $np"; echo "startTime: $start"; echo "endTime: $end"
-  echo "src: $src"
+  echo "src: $src"; echo "decompose_writeFormat: binary"
 } > machine.txt
 
 # メッシュを作り直すケース（Allrun でメッシュを作る）には対応しない。constant/polyMesh が要る
@@ -75,10 +77,12 @@ fi
 t0=$(date +%s)
 if [ "$np" -gt 1 ]; then
   decomposePar -force > log.decomposePar 2>&1
+  foamDictionary -entry writeFormat -set ascii system/controlDict >/dev/null
   # root で走らせる Docker では MPIRUN_ARGS="--allow-run-as-root" を付ける
   mpirun ${MPIRUN_ARGS:-} -np "$np" "$solver" -parallel > log.solver 2>&1 || { tail -20 log.solver; exit 1; }
   reconstructPar -latestTime > log.reconstructPar 2>&1
 else
+  foamDictionary -entry writeFormat -set ascii system/controlDict >/dev/null
   "$solver" > log.solver 2>&1 || { tail -20 log.solver; exit 1; }
 fi
 echo "wallclock_s: $(( $(date +%s) - t0 ))" >> machine.txt

@@ -1,0 +1,16 @@
+host: x86-laptop
+date: 2026-11-15T04:51:11Z
+uname: Linux (ホスト名は外した) 6.18.33.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+cpu:  12th Gen Intel(R) Core(TM) i7-1255U
+WM_PROJECT_VERSION: v2606
+WM_OPTIONS: linux64GccDPInt32Opt
+WM_COMPILER: Gcc
+solver: simpleFoam
+iterations: 500
+np: 4
+startTime: 0
+endTime: 500
+src: ~/run/fpcheck/leeds-W-C1-g2
+decompose_writeFormat: binary
+wallclock_s: 1140
+latestTime: 500

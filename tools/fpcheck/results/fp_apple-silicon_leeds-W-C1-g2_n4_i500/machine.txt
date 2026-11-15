@@ -1,0 +1,17 @@
+host: apple-silicon
+date: 2026-11-15T04:51:07Z
+uname: Darwin (ホスト名は外した) 27.2.0 Darwin Kernel Version 27.2.0: Wed Oct 14 23:45:26 PDT 2026; root:xnu-13432.41.4~25/RELEASE_ARM64_T8152 arm64
+cpu: Apple M6
+WM_PROJECT_VERSION: v2606
+WM_OPTIONS: darwin64ClangDPInt32Opt
+WM_COMPILER: Clang
+solver: simpleFoam
+iterations: 500
+np: 4
+startTime: 0
+endTime: 500
+src: ~/run/fpcheck/leeds-W-C1-g2
+decompose_writeFormat: binary
+wallclock_s: 301
+latestTime: 500
+note: run_machine.sh は rm -rf processor* の前後で bash が Segmentation fault: 11 で落ちた。計算と reconstructPar は End まで済んでいた。残り（processor の削除・latestTime・tar）を手で同じ順に行った
