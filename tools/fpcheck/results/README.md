@@ -42,3 +42,19 @@ M6 は、計算と reconstructPar が End まで済んだあと、`rm -rf proces
 ## 8 並列（i7）
 
 走らせたが、ソルバーが始まらずに止まった。Open MPI が「8 個のスロットが無い」と断った（i7 の WSL は物理コア 6 として数え、既定ではコアの数までしか起こさない）。手順のとおり条件は変えず、やり直していない。`log.solver` の最後の 20 行は掲示板の投稿に貼った。走らせるなら、Open MPI の既定を変える（`--oversubscribe` か `--use-hwthread-cpus`）必要があり、それは条件を変えることになるので依頼者に諮る。
+
+## 並列数を変えた比べ（2026-11-16）
+
+同じケース・500 反復・同じ `run_machine.sh`（hierarchical で分ける）で、並列数だけを変えた。
+
+| フォルダ | 計算機 | 並列数 | かかった時間 | mpirun に足したもの |
+|---|---|---|---|---|
+| `fp_apple-silicon_leeds-W-C1-g2_n4_i500_b` | M6 | 4 | 299 秒 | `--oversubscribe --bind-to none` |
+| `fp_apple-silicon_leeds-W-C1-g2_n6_i500` | M6 | 6 | 247 秒 | 同上 |
+| `fp_apple-silicon_leeds-W-C1-g2_n12_i500` | M6 | 12 | 222 秒 | 同上 |
+| `fp_x86-laptop_leeds-W-C1-g2_n8_i500` | i7 | 8 | 865 秒 | `--oversubscribe`（物理コア 6 に 8 ランク） |
+
+- M6 の 3 本は、mpirun が CPU の並びを読む所で止まるのを避けるため、その読み取りを外して走らせた（`machine.txt` の mpirun_args）。CPU が 1 つに見えるので `--oversubscribe` が要る。4 並列は 11-15 の結果と全セルが 1 ビットも違わなかったので、値への効きは無い
+- M6 の 12 並列は、reconstructPar の後で bash が落ち、tar が抜けた（`machine.txt` の note）。500 の時刻の場はそろっていた
+- 比べた結果：`compare_np_i500.txt`。まとめは README の 1 章の 5 番。並列数だけ変えると速度の最大の差は場の最大の 6〜10 %、RMS で 0.15〜0.25 %。計算機と並列数を両方変えても同じ大きさ
+- 場は前回と同じく入れていない（各計算機の作業フォルダにある）
